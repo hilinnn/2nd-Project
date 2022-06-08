@@ -286,19 +286,21 @@ ggplot(n_mos, aes(x = Total))+
   labs(title = 'Number of mosquitoes per night by Treatment')+
   scale_x_continuous(breaks = seq(0, maxTotal, 10))
 
-ggsave("Histogram of the number of mosquitoes by Treatment.jpeg")
+ggsave("Histogram of the number of mosquitoes by Treatment.jpeg",
+       width = 8, height = 6)
 
 ###Barplot of the number of mosquitoes by Location
 maxCount<- max(n_mos$Count)
 
 ggplot(n_mos, aes(x = Count))+
-  geom_histogram(aes(fill = WashedStatus), binwidth = 1, center = 0)+
-  facet_wrap(vars(WashedStatus))+
+  geom_histogram(aes(fill = Location), binwidth = 1, center = 0)+
+  facet_wrap(vars(Location))+
   theme(plot.title = element_text(hjust = 0.5, size = 12))+
-  labs(title = 'Number of mosquitoes per night by WashedStatus')+
+  labs(title = 'Number of mosquitoes per night by Location')+
   scale_x_continuous(breaks = seq(0, maxCount, 10))
 
-ggsave("Histogram of the number of mosquitoes by Location.jpeg")
+ggsave("Histogram of the number of mosquitoes by Location.jpeg",
+       width = 8, height = 4)
 
 ###Barplot of the whole dataset
 n_mos %>%
@@ -601,10 +603,12 @@ View(Tengrela_R1A_rm)
 m_mos <- as_tibble(Tengrela_R1A_rm)%>% 
   dplyr::select(starts_with(c("Date","Total","Treatment", "marker","Hut","Sleeper","Dead", "Alive","dead")))
 
-###Verification
-
-
 View(m_mos)
+
+
+
+
+
 
 model_1_rand <- glmer.nb(formula = Count~Location+(1|id), data = n_mos)
 summary(model_1_rand)
