@@ -57,6 +57,8 @@ range(Tengrela_R1A_rm$Date)
 #"2019-09-08" "2019-10-18"
 Tengrela_R1A_rm$Nets <- as.factor(Tengrela_R1A_rm$Nets)
 Tengrela_R1A_rm$Treatment <- as.factor(Tengrela_R1A_rm$Treatment)
+Tengrela_R1A_rm$Date <- as.Date(Tengrela_R1A_rm$Date)
+
 
 a <- subset(Tengrela_R1A_rm, Tengrela_R1A_rm$Treatment == "IG2.wash")
 
