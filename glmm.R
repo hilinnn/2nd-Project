@@ -235,7 +235,16 @@ n_mos$Insecticide <- as.factor(n_mos$Insecticide)
 n_mos$Location <- as.factor(n_mos$Location)
 n_mos$Week <- as.factor(n_mos$Week)
 
-View(n_mos)
+n_mos <- n_mos %>%
+  mutate(Nets = case_when(Treatment == "IG2.unwash" ~ "IG2",
+                          Treatment == "P3.unwash" ~ "P3",
+                          Treatment == "P2.unwash" ~ "P2",
+                          Treatment == "IG2.wash" ~ "IG2",
+                          Treatment == "P3.wash" ~ "P3",
+                          Treatment == "UTN" ~ "UTN"))
+
+n_mos$Nets <- as.factor(n_mos$Nets)
+head(n_mos)
 
 
 ###Plot of the entire dataset
@@ -320,16 +329,16 @@ n_mos %>%
   summarise(Avg = mean(Count), max = max(Count), min = min(Count)) %>%
   ggplot(aes(x = Location, y = Avg, color = Location))+
     geom_col(aes(fill= Location))+
-    geom_errorbar(aes(x=Location, ymin=min, ymax= max), color = 'steelblue')+
+    #geom_errorbar(aes(x=Location, ymin=min, ymax= max), color = 'steelblue')+
     facet_wrap(vars(Treatment))+
-    labs(title = "Mean and range number of mosquitoes in each location by treatment")+
+    labs(title = "Mean and range of number of mosquitoes in each location by treatment")+
     theme(plot.title = element_text(hjust = 0.5, size = 12.5),
           axis.text.x = element_text(size = 13),
           axis.text.y = element_text(size = 13),
           strip.text = element_text(size = 10))
 
-ggsave("Average and range of number of mosquitoes by treatment and location.jpeg",
-       width = 9, height = 6.5)
+ggsave("Average of number of mosquitoes by treatment and location.jpeg",
+       width = 8, height = 5.5)
     
 
 
@@ -630,6 +639,7 @@ m_mos$Location <- as.factor(m_mos$Location)
 head(m_mos)
 View(m_mos) 
 
+
 ###Plot the data to find the appropriate distribution for the data
 ggplot(m_mos, aes(x=Mortality, fill = Treatment))+
   geom_histogram(binwidth = 0.1, boundary = 0, alpha=0.5)+
@@ -661,7 +671,15 @@ ggsave("Frequency line graph of mortality of mosquitoes by Location and Treatmen
 mor_0 <- glm(Mortality~1, data = m_mos, family = binomial("log"))
 summary(mor_0)
 ##AIC: 578.8
+mor_0_ran <- glmer(Mortality~(1|marker), 
+                   data = m_mos, family = binomial("logit"))
+summary(mor_0_ran)
+##AIC: 560.5
 
+mor_0_ran_id <- glmer(Mortality~(1|id), 
+                   data = m_mos, family = binomial("logit"))
+##AIC:560.8
+##Singular fit
 
 
 ####Model 1
@@ -670,11 +688,18 @@ mor_1 <- glm(Mortality~Location+Treatment, data = m_mos, family = binomial("logi
 summary(mor_1)
 ##AIC: 522.57
 
+mor_1_q <- glm(Mortality~Location+Treatment, data = m_mos, family = quasibinomial("logit"))
+summary(mor_1_q)
+
 ###Variables: Location and Treatment with interactions
 mor_2 <- glm(Mortality~Location+Treatment + Location*Treatment, 
              data = m_mos, family = binomial("logit"))
-summary(mor_1)
+summary(mor_2)
 ##AIC: 533.29
+
+mor_2_q <- glm(Mortality~Location+Treatment + Location*Treatment, 
+             data = m_mos, family = quasibinomial("logit"))
+summary(mor_2_q)
 
 ##Warnings in all Binomial family logit regression: non-integer #successes in a binomial glm!
 
@@ -686,7 +711,8 @@ summary(mor_1_ran)
 ##AIC: 495.3
 ##Variance of the random effect: 0.002516 (small)
 
-mor_2_ran <- glmer(Mortality~Location+Treatment + + Location*Treatment + (1|id), 
+
+mor_2_ran <- glmer(Mortality~Location+Treatment +  Location*Treatment + (1|marker), 
                    data = m_mos, family = binomial("logit"))
 summary(mor_2_ran)
 ##AIC: 501.7
@@ -720,29 +746,6 @@ glm.diag.plots(rs_1)
 
 sum(n_mos$Count == 0)
 
-###Find the relationship between the count and location and treatment
-model_2 <- glm.nb(formula = Count~Location+Treatment, data = n_mos)
-summary(model_2)
-plot(model_2)
-
-###Adding individual random effect to model 2
-model_2_rand <- glmer.nb(formula = Count~Location+Treatment+(1|id), data = n_mos)
-summary(model_2_rand)
-###AIC: 3652.3
-
-plot(model_2_rand)
-###Plot the residuals
-plot(simulateResiduals(fittedModel = model_2_rand, refit = TRUE))
-
-
-###Adding individual random effect and interaction terms to model 2
-model_2_rand_int <- glmer.nb(formula = Count~Location+Treatment+Location*Treatment+(1|id), data = n_mos)
-##3 Warnings in failed to converge
-summary(model_2_rand_int) 
-###AIC: 3659
-plot(model_2_rand_int)
-###Plot the residuals
-plot(simulateResiduals(fittedModel = model_2_rand_int, refit = F))
 
 
 
