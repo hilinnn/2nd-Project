@@ -37,4 +37,4 @@ gen_mo <- function(data){
   return(out)
 }
 
-mor_reg <- gen_mo(m_mos)
+
