@@ -7,226 +7,9 @@ library(MASS)
 library(merTools)
 library(ggpubr)
 library(ggpmisc)
+library(nnet)
 
-
-####Functions
-
-###Obtain boxplots of the estimated coefficients
-getcoefsde <- function(model,name){
-  a <- sqrt(diag(vcov(model))) #standard error
-  b <- as.data.frame(fixef(model)) #Coefficient 
-  n <- nrow(b)
-  coef_se <- matrix(data = NA, nrow = nrow(b), ncol = 5)
-  colnames(coef_se) <- c("Model", "Var","Point_est","lower", "upper")
-  coef_se[,1] <- rep(name, nrow(b))
-  coef_se[,2] <- rownames(b)
-  coef_se[,3] <- round(exp(b[,1]),2)
-  coef_se[,4] <- round(exp(b[,1] - 1.96*a),2)
-  coef_se[,5] <- round(exp(b[,1] + 1.96*a),2)
-  coef_se <- as.data.frame(coef_se)
-  
-  coef_se$Model <- as.factor(coef_se$Model)
-  coef_se$Var <- as.factor(coef_se$Var)
-  coef_se$Point_est <- as.numeric(coef_se$Point_est)
-  coef_se$lower <- as.numeric(coef_se$lower)
-  coef_se$upper <- as.numeric(coef_se$upper)
-  
-  
-  return(coef_se)
-}
-
-
-a <- predict(object = model_4_4, 
-             newdata =data.frame(Sleeper = factor(levels(n_mos$Sleeper), levels = levels(n_mos$Sleeper)),
-                             Location = factor(rep(Loc_levels[1],6), levels = Loc_levels),
-                             WashedStatus = factor(rep(WS_levels[1],6), levels = WS_levels)),
-             re.form = NULL, se.fit = TRUE)
-
-pred_WS <- pred_num("WashedStatus + Location ", 
-                    data = n_mos, mod = model_4_2, fix_eff = "WashedStatus", rand_eff = "Sleeper")
-             
-             
-###Return a list of actual frequency and the estimated average number of mosquitoes
-
-pred_num <- function(model_name, data, mod, fix_eff, rand_eff){
-  Loc_levels <- levels(data$Location)
-  nLoc <- length(Loc_levels)
-  
-  l <- matrix(data = NA, ncol = 5, nrow = 0)
-  
-  ns <- length(levels(data$Sleeper))
-  
-  if (fix_eff == "WashedStatus" & rand_eff == "Sleeper"){
-    WS_levels <- levels(data$WashedStatus)
-    nWS <- length(levels(data$WashedStatus))
-    
-    
-    for (i in 1:nLoc) {
-      for (j in 1:nWS){
-        
-        t <- data %>%
-          subset(Location == Loc_levels[i] & WashedStatus == WS_levels[j]) %>% 
-          dplyr::select(Count)
-        t <- as.data.frame(t)
-        
-        len <- nrow(t)
-        
-        k <- matrix(data = NA, ncol = 5, nrow = len)
-        
-        k[,5] <- t[,1]         
-        
-        k[,2] <- rep(paste(Loc_levels[i],"x",WS_levels[j]),len)
-        
-        a <- predict(mod, data.frame(Sleeper = factor(levels(data$Sleeper), levels = levels(data$Sleeper)),
-                                           Location = factor(rep(Loc_levels[i],6), levels = Loc_levels),
-                                           WashedStatus = factor(rep(WS_levels[j],6), levels = WS_levels)),
-                     type = "link", re.form = NULL)
-        k[1:ns,3] <- exp(a)
-        
-        t <- data %>%
-          filter(Location == Loc_levels[i] & WashedStatus == WS_levels[j]) %>%
-          summarise(tv = mean(Count))
-        k[1:ns,4] <- rep(as.numeric(t), ns)
-        
-        l <- rbind(l,k)
-      }
-    }
-  } 
-  
-  
-  if (fix_eff == "WashedStatus" & rand_eff == "Sleeper+Week"){
-    WS_levels <- levels(data$WashedStatus)
-    nWS <- length(levels(data$WashedStatus))
-    nw <- length(levels(data$Week))
-    n <- ns*nw
-    for (i in 1:nLoc) {
-      for (j in 1:nWS){
-        
-        t <- data %>%
-          subset(Location == Loc_levels[i] & WashedStatus == WS_levels[j]) %>% 
-          dplyr::select(Count)
-        t <- as.data.frame(t)
-        
-        len <- nrow(t)
-        
-        k <- matrix(data = NA, ncol = 5, nrow = len)
-        
-        k[,5] <- t[,1]         
-        
-        k[,2] <- rep(paste(Loc_levels[i],"x",WS_levels[j]), len)
-        
-        a <- predict(mod, data.frame(Sleeper = factor(levels(data$Sleeper), levels = levels(data$Sleeper)),
-                                           Week = factor(levels(data$Week), levels = levels(data$Week)),
-                                           Location = factor(rep(Loc_levels[i],6), levels = Loc_levels),
-                                           WashedStatus = factor(rep(WS_levels[j],6), levels = WS_levels)),
-                     type = "link",  re.form = NULL)
-        
-        k[1:n,3] <- exp(a)
-        
-        t <- data %>%
-          filter(Location == Loc_levels[i] & WashedStatus == WS_levels[j]) %>%
-          summarise(tv = mean(Count))
-        k[1:n,4] <- rep(as.numeric(t), n)
-        
-        l <- rbind(l,k)
-      }
-    }
-  } 
-  
-  
-  if (fix_eff == "Treatment" & rand_eff == "Sleeper"){
-    Treatment_levels <- levels(data$Treatment)
-    nT <- length(levels(data$Treatment))
-    
-    for (i in 1:nLoc) {
-      for (j in 1:nT){
-        
-        t <- data %>%
-          subset(Location == Loc_levels[i] & Treatment == Treatment_levels[j]) %>% 
-          dplyr::select(Count)
-        t <- as.data.frame(t)
-        
-        len <- nrow(t)
-        
-        k <- matrix(data = NA, ncol = 5, nrow = len)
-      
-        k[,5] <- t[,1]
-        
-        k[,2] <- rep(paste(Loc_levels[i],"x",Treatment_levels[j]),len)
-        
-        a <- predict(mod, data.frame(Sleeper = factor(levels(data$Sleeper), levels = levels(data$Sleeper)),
-                                           Location = factor(rep(Loc_levels[i],6), levels = Loc_levels),
-                                           Treatment = factor(rep(Treatment_levels[j],6), levels = Treatment_levels)),
-                     type = "link", re.form = NULL)
-        k[1:ns,3] <- exp(a)
-        
-        t <- data %>%
-          filter(Location == Loc_levels[i] & Treatment == Treatment_levels[j]) %>%
-          summarise(tv = mean(Count))
-        k[1:ns,4] <- rep(as.numeric(t), ns)
-        
-        
-        l <- rbind(l,k)
-      }
-    }
-  } 
-  
-  
-  if (fix_eff == "Treatment" & rand_eff == "Sleeper+Week"){
-    Treatment_levels <- levels(data$Treatment)
-    nT <- length(levels(data$Treatment))
-    nw <- length(levels(data$Week))
-    n <- ns*nw
-    for (i in 1:nLoc) {
-      for (j in 1:nT){
-       
-        t <- data %>%
-          subset(Location == Loc_levels[i] & Treatment == Treatment_levels[j]) %>% 
-          dplyr::select(Count)
-        t <- as.data.frame(t)
-        
-        len <- nrow(t)
-        
-        k <- matrix(data = NA, ncol = 5, nrow = len)
-        
-        k[,5] <- t[,1]
-        
-        a <- predict(mod, data.frame(Sleeper = factor(levels(data$Sleeper), levels = levels(data$Sleeper)),
-                                     Week = factor(levels(data$Week), levels = levels(data$Week)),
-                                     Location = factor(rep(Loc_levels[i],6), levels = Loc_levels),
-                                     Treatment = factor(rep(Treatment_levels[j],6), levels = Treatment_levels)),
-                     type = "link", re.form = NULL)
-        a <- exp(a)
-        
-        k[,2] <- rep(paste(Loc_levels[i],"x",Treatment_levels[j]),len)
-        
-        k[1:n,3] <- a
-        
-        t <- data %>%
-          filter(Location == Loc_levels[i] & Treatment == Treatment_levels[j]) %>%
-          summarise(tv = mean(Count))
-        k[1:n,4] <- rep(as.numeric(t), n)
-        
-
-        l <- rbind(l,k)
-      }
-    }
-  } 
-
-  
-  l[,1] <- rep(model_name, nrow(l))
-  colnames(l) <- c("Model", "Category", "Predicted.value", "True.Mean", "True.value")
-  l <- as.data.frame(l)
-  
-  l[,3] <- round(as.double(l[,3]),2)
-  l[,4] <- round(as.double(l[,4]),2)
-  l[,5] <- as.double(l[,5])
-  
-  return(l)
-
-}
-
-
+source("~/Desktop/Second project/R/glmm_functions.R")
 
 
 a <- predict(model_5_5, data.frame(Sleeper = factor(levels(n_mos$Sleeper), levels = levels(n_mos$Sleeper)),
@@ -400,6 +183,40 @@ model_0 <- glm.nb(formula = Count~1, data = n_mos)
 summary(model_0)
 ##3702.4
 
+###Fitting multinomial model to test the impact of treatment to the location
+
+##Chagne the reference category
+n_mos$Treatment <- relevel(n_mos$Treatment, ref = "UTN")
+
+multimod_Tr_Loc <- multinom(Location ~ Treatment+Count, data = n_mos)
+# # weights:  24 (14 variable)
+# initial  value 711.900763 
+# iter  10 value 682.074194
+# iter  20 value 681.618248
+# iter  20 value 681.618247
+# iter  20 value 681.618247
+# final  value 681.618247 
+# converged
+
+summary(multimod_Tr_Loc)
+z_multimod_Tr_Loc <- summary(multimod_Tr_Loc)$coefficients/summary(multimod_Tr_Loc)$standard.errors
+p_multimod_Tr_Loc <- (1-pnorm(abs(z_multimod_Tr_Loc),0,1))*2
+
+
+
+n_mos$Nets <- relevel(n_mos$Nets, ref = "UTN")
+multimod_Ne_Loc <- multinom(Location ~ Nets+Count, data = n_mos)
+# # weights:  18 (10 variable)
+# initial  value 711.900763 
+# iter  10 value 682.558178
+# final  value 681.945688 
+# converged
+
+summary(multimod_Ne_Loc)
+z_multimod_Ne_Loc <- summary(multimod_Ne_Loc)$coefficients/summary(multimod_Ne_Loc)$standard.errors
+p_multimod_Ne_Loc <- (1-pnorm(abs(z_multimod_Ne_Loc),0,1))*2
+
+
 model_1_1 <- glm.nb(formula = Count~Location, data = n_mos)
 summary(model_1_1)
 model_1_1$coefficients
@@ -425,7 +242,7 @@ summary(model_1_4)
 #AIC: 3698.5
 #AIC: 1630.8
 
-model_1_5 <- glm.nb(formula = Total~Nets, data = n_mos_wt_Loc)
+model_1_5 <- glm.nb(formula = Count~Nets, data = n_mos)
 summary(model_1_5)
 #AIC: 3700.2
 #AIC: 1632.5
@@ -652,14 +469,14 @@ ggplot(predxNet_W, aes(x = Category))+
   geom_point(aes(y = True.value), color = 'steelblue')+
   geom_boxplot(aes(y=Predicted.value), fill = 'seagreen')+
   geom_point(aes(y=True.Mean), fill = 'red', size = 3)+
-  labs(title = "Best model estimates vs read data plot : Treatment + Location + Treatment x Location",
+  labs(title = "Best model estimates and actual data plot : Treatment + Location + Treatment x Location",
        y= "True/predicted number of mosquitoes")+
   theme(axis.text.x = element_text(angle = 90, size = 12),
         plot.title = element_text(size = 15, hjust = 0.5),
         axis.title.y = element_text(size = 15),
         axis.title.x = element_text(size = 15))
 
-ggsave("Best model estimates vs read data plot : Treatment + Location + Treatment x Location.jpeg",
+ggsave("Best model estimates and real data plot (Treatment and Location with interaction).jpeg",
        device = "jpeg", width = 12, height = 9)
 
 

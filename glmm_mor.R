@@ -18,9 +18,6 @@ library(ggpmisc)
 ###Adding individual random effect to model 1
 View(Tengrela_R1A_rm)
 
-mor_reg <- gen_mo(m_mos)
-
-
 m_mos_df <- as_tibble(Tengrela_R1A_rm)%>% 
   mutate(Room = dead24.Room/Total.Room,
          Net = dead24.Net/Total.Net,
@@ -35,14 +32,44 @@ m_mos <- as_tibble(Tengrela_R1A_rm)%>%
          Net = Dead.Net/Total.Net,
          Veranda = Dead.Ver/Total.Ver)%>%
   gather("Location", "Mortality", c("Room", "Net", "Veranda"))%>%
-  left_join(m_mos_df, by = c("Location", "Treatment", "Date"))%>%
   dplyr::select(starts_with(c("Village","Date","Treatment","Location", "Mortality",
-                              "Total","Dead","dead","Hut","Sleeper","marker")))
+                              "Total","Dead","dead","Hut","Sleeper","marker"))) %>%
+  mutate(WashedStatus = case_when( Treatment == "IG2.unwash" ~ "unwashed",
+                                   Treatment == "P3.unwash" ~ "unwashed",
+                                   Treatment == "P2.unwash" ~ "unwashed",
+                                   Treatment == "IG2.wash" ~ "washed",
+                                   Treatment == "P3.wash" ~ "washed",
+                                   Treatment == "UTN" ~ "UTN"),
+         Insecticide = case_when(Treatment == "IG2.unwash" ~ "alpha cypermethrin",
+                                 Treatment == "P3.unwash" ~ "deltamethrin",
+                                 Treatment == "P2.unwash" ~ "deltamethrin",
+                                 Treatment == "IG2.wash" ~ "alpha cypermethrin",
+                                 Treatment == "P3.wash" ~ "deltamethrin",
+                                 Treatment == "UTN" ~ "UTN"),
+         Week = ceiling((yday(Date) - min(yday(Date))+1)/7),
+         Nets = case_when(Treatment == "IG2.unwash" ~ "IG2",
+                          Treatment == "P3.unwash" ~ "P3",
+                          Treatment == "P2.unwash" ~ "P2",
+                          Treatment == "IG2.wash" ~ "IG2",
+                          Treatment == "P3.wash" ~ "P3",
+                          Treatment == "UTN" ~ "UTN"))
 
 m_mos$Location <- as.factor(m_mos$Location)
 
 head(m_mos)
 View(m_mos) 
+
+
+###Generate the data used in the model fitting
+mor_reg <- gen_mo(m_mos)
+mor_reg$WashedStatus <- as.factor(mor_reg$WashedStatus)
+mor_reg$Insecticide <- as.factor(mor_reg$Insecticide)
+mor_reg$Nets <- as.factor(mor_reg$Nets)
+mor_reg$Location <- as.factor(mor_reg$Location)
+
+
+View(mor_reg)
+
 
 
 ###Plot the data to find the appropriate distribution for the data
@@ -73,9 +100,10 @@ ggsave("Frequency line graph of mortality of mosquitoes by Location and Treatmen
 
 
 ####Model 0
-mor_0 <- glm(Mortality~1, data = m_mos, family = binomial("log"))
+mor_0 <- glm(Dead~1, data = mor_reg, family = binomial("log"))
 summary(mor_0)
-##AIC: 578.8
+##AIC: 4819.5
+
 mor_0_ran <- glmer(Mortality~(1|marker), 
                    data = m_mos, family = binomial("logit"))
 summary(mor_0_ran)
@@ -87,66 +115,223 @@ mor_0_ran_id <- glmer(Mortality~(1|id),
 ##Singular fit
 
 
-####Model 1
-###Variables: Location and Treatment
-mor_1 <- glm(Mortality~Location+Treatment, data = m_mos, family = binomial("logit"))
-summary(mor_1)
-##AIC: 522.57
+####Model 1: Location 
+mor_1_1 <- glm(Dead~Location, data = mor_reg, family = binomial("logit"))
+summary(mor_1_1)
+##AIC: 4627.9
 
-mor_1_q <- glm(Mortality~Location+Treatment, data = m_mos, family = quasibinomial("logit"))
-summary(mor_1_q)
 
-###Variables: Location and Treatment with interactions
-mor_2 <- glm(Mortality~Location+Treatment + Location*Treatment, 
-             data = m_mos, family = binomial("logit"))
-summary(mor_2)
-##AIC: 533.29
+####Model 2: WashedStatus 
+mor_1_2 <- glm(Dead~WashedStatus, data = mor_reg, family = binomial("logit"))
+summary(mor_1_2)
+##AIC: 4685.3
 
-mor_2_q <- glm(Mortality~Location+Treatment + Location*Treatment, 
-               data = m_mos, family = quasibinomial("logit"))
-summary(mor_2_q)
+
+####Model 3: Treatment 
+mor_1_3 <- glm(Dead~Treatment, data = mor_reg, family = binomial("logit"))
+summary(mor_1_3)
+##AIC: 4410.3
+
+####Model 4: Insecticide 
+mor_1_4 <- glm(Dead~Insecticide, data = mor_reg, family = binomial("logit"))
+summary(mor_1_4)
+##AIC: 4689.4
+
+####Model 5: Nets 
+mor_1_5 <- glm(Dead~Nets, data = mor_reg, family = binomial("logit"))
+summary(mor_1_5)
+##AIC: 4689.6
+
+
+
+
+
+###Variables: Location and others 
+mor_2_1 <- glm(Dead~Location+Treatment, 
+             data = mor_reg, family = binomial("logit"))
+summary(mor_2_1)
+##AIC: 4251
+
+
+mor_2_2 <- glm(Dead~Location+WashedStatus, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_2_2)
+##AIC: 4495.3
+
+
+mor_2_3 <- glm(Dead~Location+Insecticide,
+               data = mor_reg, family = binomial("logit"))
+summary(mor_2_3)
+##AIC: 4500.7
+
+
+mor_2_4 <- glm(Dead~Location+Nets, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_2_4)
+##AIC: 4501.1
+
+
+###Variables: Location and others with interactions
+mor_3_1 <- glm(Dead~Location+Treatment + Location*Treatment, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_3_1)
+##AIC: 4225.8
+
+mor_3_2 <- glm(Dead~Location+WashedStatus + Location*WashedStatus, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_3_2)
+##AIC: 4469
+
+mor_3_3 <- glm(Dead~Location+Insecticide + Location*Insecticide, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_3_3)
+##AIC: 4485.4
+
+mor_3_4 <- glm(Dead~Location+Nets + Location*Nets, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_3_4)
+##AIC: 4488.4
+
+
 
 ##Warnings in all Binomial family logit regression: non-integer #successes in a binomial glm!
 
 ###Mixed effect model
-##Random effect: individual random effect (per hut per night)
-mor_1_ran <- glmer(Mortality~Location+Treatment + (1|marker), 
-                   data = m_mos, family = binomial("logit"))
-summary(mor_1_ran)
-##AIC: 495.3
-##Variance of the random effect: 0.002516 (small)
+##Random effect: individual random effect (observational)
 
 
-mor_2_ran <- glmer(Mortality~Location+Treatment +  Location*Treatment + (1|marker), 
-                   data = m_mos, family = binomial("logit"))
-summary(mor_2_ran)
-##AIC: 501.7
-##Variance of the random effect: 0.0004968 (small)
-
-##Additional warnings: failed to converge
-
-##Tried to solve the warnings but unsuccessful
-m_mos <- m_mos %>%
-  mutate(id = seq(1, nrow(m_mos),1))
-View(m_mos)
+####Model 1: Location 
+mor_1_1_ran <- glmer(Dead~Location  + (1|marker), 
+                   data = mor_reg, family = binomial("logit"))
+summary(mor_1_1_ran)
+##AIC: 4067.5
+##Variance of the random effect: 1.596 
 
 
-
-model_1_rand <- glmer.nb(formula = Count~Location+(1|id), data = n_mos)
-summary(model_1_rand)
-###AIC: 3659.1
-plot(model_1_rand)
-
-###Plot the residuals
-plot(model_1_rand_resid)
-model_1_rand_resid <- simulateResiduals(fittedModel = model_1_rand, n = nrow(n_mos)*5, refit = TRUE)
-plot(model_1_rand_resid)
-testDispersion(model_1_rand_resid)
-
-rs_1 <- simulateResiduals(fittedModel = model_1)
-a <- testOutliers(rs_1, type = 'bootstrap')
-plot(a)
-glm.diag.plots(rs_1)
+####Model 2: WashedStatus 
+mor_1_2_ran <- glmer(Dead~WashedStatus+ (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_2_ran)
+##AIC: 4145.6
+##Variance of the random effect: 1.474 
 
 
-sum(n_mos$Count == 0)
+####Model 3: Treatment 
+mor_1_3_ran <- glmer(Dead~Treatment + (1|marker), 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_1_3_ran)
+##AIC: 4093.1
+##Variance of the random effect: 0.9805 
+
+####Model 4: Insecticide 
+mor_1_4_ran <- glmer(Dead~Insecticide + (1|marker), 
+                   data = mor_reg, family = binomial("logit"))
+summary(mor_1_4_ran)
+##AIC: 4147.7
+##Variance of the random effect: 1.494 
+
+####Model 5: Nets 
+mor_1_5_ran <- glmer(Dead~Nets + (1|marker), 
+                   data = mor_reg, family = binomial("logit"))
+summary(mor_1_5_ran)
+##AIC: 4147.3
+##Variance of the random effect: 1.485 
+
+
+
+###Variables: Location and others with observational random effect
+mor_2_1_ran <- glmer(Dead~Location+Treatment + (1|marker), 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_2_1_ran)
+##AIC: 3995.1
+##Variance of the random effect: 0.8808 
+
+mor_2_2_ran <- glmer(Dead~Location+WashedStatus + (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_2_2_ran)
+##AIC: 4047.5
+##Variance of the random effect: 1.344 
+
+mor_2_3_ran <- glmer(Dead~Location+Insecticide + (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_2_3_ran)
+##AIC: 4050.3
+##Variance of the random effect: 1.37 
+
+mor_2_4_ran <- glmer(Dead~Location+Nets + (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_2_4_ran)
+##AIC: 4050.4
+##Variance of the random effect: 1.364 
+
+
+
+###Variables: Location and others with interaction and observational random effect
+mor_3_1_ran <- glmer(Dead~Location+Treatment + Location*Treatment +(1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_3_1_ran)
+##AIC: 3979.8
+##Variance of the random effect: 0.9021 
+
+###Model failed to converge
+
+mor_3_2_ran <- glmer(Dead~Location+WashedStatus+Location*WashedStatus + (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_3_2_ran)
+##AIC: 4035.2
+##Variance of the random effect: 1.348 
+
+mor_3_3_ran <- glmer(Dead~Location+Insecticide + Location*Insecticide +(1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_3_3_ran)
+##AIC: 4035.9
+##Variance of the random effect: 1.378 
+
+mor_3_4_ran <- glmer(Dead~Location+Nets + Location*Nets +(1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_3_4_ran)
+##AIC: 4038.6
+##Variance of the random effect: 1.378 
+
+
+
+############################################################
+####################Do not run##############################
+############################################################
+# 
+# mor_2_ran <- glmer(Mortality~Location+Treatment +  Location*Treatment + (1|marker), 
+#                    data = m_mos, family = binomial("logit"))
+# summary(mor_2_ran)
+# ##AIC: 501.7
+# ##Variance of the random effect: 0.0004968 (small)
+# 
+# ##Additional warnings: failed to converge
+# 
+# ##Tried to solve the warnings but unsuccessful
+# m_mos <- m_mos %>%
+#   mutate(id = seq(1, nrow(m_mos),1))
+# View(m_mos)
+# 
+# 
+# 
+# model_1_rand <- glmer.nb(formula = Count~Location+(1|id), data = n_mos)
+# summary(model_1_rand)
+# ###AIC: 3659.1
+# plot(model_1_rand)
+# 
+# ###Plot the residuals
+# plot(model_1_rand_resid)
+# model_1_rand_resid <- simulateResiduals(fittedModel = model_1_rand, n = nrow(n_mos)*5, refit = TRUE)
+# plot(model_1_rand_resid)
+# testDispersion(model_1_rand_resid)
+# 
+# rs_1 <- simulateResiduals(fittedModel = model_1)
+# a <- testOutliers(rs_1, type = 'bootstrap')
+# plot(a)
+# glm.diag.plots(rs_1)
+# 
+# 
+# sum(n_mos$Count == 0)
+
+
+
