@@ -465,25 +465,75 @@ pred_p_W <- rbind(pred_WS_W, pred_Net_W, predxWS_W, predxNet_W)
 View(pred_p_W)
 
 ###Plot the predicted values from the best model and the corresponding true values
-ggplot(predxNet_W, aes(x = Category))+
-  geom_point(aes(y = True.value), color = 'steelblue')+
-  geom_boxplot(aes(y=Predicted.value), fill = 'seagreen')+
-  geom_point(aes(y=True.Mean), fill = 'red', size = 3)+
+predxNet_W %>% 
+  separate(Category, c("Location","Treatment"), sep = "x", remove = FALSE) %>%
+  group_by(Category) %>%
+  mutate(mean_pred = mean(Predicted.value)) %>%
+  ungroup() %>%
+  ggplot(aes(x = Model))+
+  geom_boxplot(aes(y = True.value), fill = 'seagreen', alpha = 0.6)+
+  geom_point(aes(y=mean_pred), color = 'orange', alpha = 0.3)+
   labs(title = "Best model estimates and actual data plot : Treatment + Location + Treatment x Location",
        y= "True/predicted number of mosquitoes")+
-  theme(axis.text.x = element_text(angle = 90, size = 12),
-        plot.title = element_text(size = 15, hjust = 0.5),
+  theme(plot.title = element_text(size = 15, hjust = 0.5),
         axis.title.y = element_text(size = 15),
-        axis.title.x = element_text(size = 15))
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+  
+  facet_grid(vars(Location), vars(Treatment))
+
 
 ggsave("Best model estimates and real data plot (Treatment and Location with interaction).jpeg",
        device = "jpeg", width = 12, height = 9)
 
 
 
+####Use the predxNet_W to separate column for Location and Treatment
+Describe_loc_tr <- predxNet_W %>%
+  separate(Category, c("Location","Treatment"), sep = "x", remove = FALSE) %>%
+  group_by(Category) %>%
+  mutate(mean_pred = mean(Predicted.value)) %>%
+  ungroup()
 
 
-ggplot(pred_p_W, aes(x = True.Value, y=Predicted.value))+
+Describe_loc_tr <- as.data.frame(Describe_loc_tr)
+Describe_loc_tr$Treatment <- as.character(Describe_loc_tr$Treatment)
+
+View(Describe_loc_tr)
+
+test <- as_tibble(Describe_loc_tr) %>%
+  dplyr::mutate(Nets = case_when(Treatment == "IG2.unwash" ~ "IG2",
+                          Treatment == "P3.unwash" ~ "P3",
+                          Treatment == "P2.unwash" ~ "P2",
+                          Treatment == "IG2.wash" ~ "IG2",
+                          Treatment == "P3.wash" ~ "P3",
+                          Treatment == "UTN" ~ "UTN"))
+
+
+# Describe_loc_tr$Nets <- as.factor(`Describe_loc_tr`$Nets)
+head(test)
+
+
+
+
+ggplot(Describe_loc_tr)+
+  geom_boxplot(aes(y=True.value, x=Model, fill = Treatment))+
+  geom_point(aes(y=mean_pred, x=Model), fill = 'red', color = 'red',size = 2, shape = 23)+
+  facet_grid(vars(Location), vars(Treatment))+
+  labs(title = "Actual and predicted average number of mosquitoes by location and treatment",
+       y = "Number of mosquitoes")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+ggsave("Boxplots of number of mosquitoes by location and treatment.jpeg", device = 'jpeg',
+       height = 6.5, width = 9)
+
+
+
+
+ggplot(pred_p_W, aes(y = True.Value))+
   geom_point(color = 'steelblue') + facet_wrap(~Model) +
   geom_smooth(formula = y~ x, method = "lm", se = FALSE, color = 'orange') +
   geom_abline(slope = 1, intercept = 0, linetype = 2, size = 1)+

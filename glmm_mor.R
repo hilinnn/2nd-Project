@@ -197,8 +197,10 @@ summary(mor_3_4)
 ##Warnings in all Binomial family logit regression: non-integer #successes in a binomial glm!
 
 ###Mixed effect model
-##Random effect: individual random effect (observational)
 
+################################################################################
+############Random effect: individual random effect (observational)#############
+################################################################################
 
 ####Model 1: Location 
 mor_1_1_ran <- glmer(Dead~Location  + (1|marker), 
@@ -236,6 +238,92 @@ mor_1_5_ran <- glmer(Dead~Nets + (1|marker),
 summary(mor_1_5_ran)
 ##AIC: 4147.3
 ##Variance of the random effect: 1.485 
+
+
+################################################################################
+####################Random effect: individual random effect (Hut)###############
+################################################################################
+
+####Model 1: Location 
+mor_1_1_Hut <- glmer(Dead~Location  + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_1_Hut)
+##AIC: 4571.3
+##Variance of the random effect: 0.09573 
+
+
+####Model 2: WashedStatus 
+mor_1_2_Hut <- glmer(Dead~WashedStatus+ (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_2_Hut)
+##AIC: 4623.9
+##Variance of the random effect: 0.102 
+
+
+####Model 3: Treatment 
+mor_1_3_Hut <- glmer(Dead~Treatment + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_3_Hut)
+##AIC: 4366.4
+##Variance of the random effect: 0.08424 
+
+####Model 4: Insecticide 
+mor_1_4_Hut <- glmer(Dead~Insecticide + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_4_Hut)
+##AIC: 4631.8
+##Variance of the random effect: 0.09726 
+
+####Model 5: Nets 
+mor_1_5_Hut <- glmer(Dead~Nets + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_5_Hut)
+##AIC: 4631.1
+##Variance of the random effect: 0.09869 
+
+
+
+################################################################################
+################Random effect: individual random effect (Sleeper)###############
+################################################################################
+
+####Model 1: Location 
+mor_1_1_Sleeper <- glmer(Dead~Location  + (1|Sleeper), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_1_Sleeper)
+##AIC: 4610.3
+##Variance of the random effect: 0.04278 
+
+
+####Model 2: WashedStatus 
+mor_1_2_Sleeper <- glmer(Dead~WashedStatus+ (1|Sleeper), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_2_Sleeper)
+##AIC: 4654.7
+##Variance of the random effect: 0.06182 
+
+
+####Model 3: Treatment 
+mor_1_3_Sleeper <- glmer(Dead~Treatment + (1|Sleeper), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_3_Sleeper)
+##AIC: 4372.0
+##Variance of the random effect: 0.08367 
+
+####Model 4: Insecticide 
+mor_1_4_Sleeper <- glmer(Dead~Insecticide + (1|Sleeper), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_4_Sleeper)
+##AIC: 4645.5
+##Variance of the random effect: 0.0835 
+
+####Model 5: Nets 
+mor_1_5_Sleeper <- glmer(Dead~Nets + (1|Sleeper), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_1_5_Sleeper)
+##AIC: 4646.5
+##Variance of the random effect: 0.08241 
+
 
 
 
