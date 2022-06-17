@@ -55,6 +55,8 @@ m_mos <- as_tibble(Tengrela_R1A_rm)%>%
                           Treatment == "UTN" ~ "UTN"))
 
 m_mos$Location <- as.factor(m_mos$Location)
+m_mos$Date <- as.Date(m_mos$Date)
+
 
 head(m_mos)
 View(m_mos) 
@@ -69,6 +71,10 @@ mor_reg$Location <- as.factor(mor_reg$Location)
 
 
 View(mor_reg)
+
+mor_reg$WashedStatus <- relevel(mor_reg$WashedStatus, ref = "UTN")
+mor_reg$Nets <- relevel(mor_reg$Nets, ref = "UTN")
+
 
 
 
@@ -94,6 +100,21 @@ ggplot(m_mos, aes(x=Mortality, after_stat(density)))+
 ggsave("Frequency line graph of mortality of mosquitoes by Location and Treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
 
+####Dotplot of the mortality
+
+ggplot(m_mos, aes(y = Mortality, x = Date, color = Nets))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Treatment))+
+  scale_x_date(date_breaks = "1 week", date_labels = "%W",
+               date_minor_breaks = "1 day")+
+  labs(title = "Daily mortality by location and treatment",
+       x = "Week")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Dotplot of daily mortality by location and treatment.jpeg", 
+       device = jpeg, width = 8, height = 5.5)
+
+prop.test()
 
 ####Run logistic regression for the mortality
 ###Fixed effect model
@@ -106,7 +127,7 @@ summary(mor_0)
 
 mor_0_ran <- glmer(Mortality~(1|marker), 
                    data = m_mos, family = binomial("logit"))
-summary(mor_0_ran)
+summary(mor_0_ran)ww
 ##AIC: 560.5
 
 mor_0_ran_id <- glmer(Mortality~(1|id), 
@@ -193,8 +214,63 @@ summary(mor_3_4)
 ##AIC: 4488.4
 
 
+### 3 Variables: Location and WashedStatus and Nets
+mor_4_1 <- glm(Dead~Location + WashedStatus + Nets, 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_4_1)
+##AIC: 4460.6
 
-##Warnings in all Binomial family logit regression: non-integer #successes in a binomial glm!
+mor_4_1_ran <- glmer(Dead~Location + WashedStatus + Nets + (1|marker), 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_4_1_ran)
+##AIC: 4043.9
+##Variance of the random effect: 1.279 
+
+mor_4_1_Hut <- glmer(Dead~Location + WashedStatus + Nets + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_4_1_Hut)
+##AIC: 4413.4
+##Variance of the random effect: 0.08696 
+
+mor_4_1_Mix <- glmer(Dead~Location + WashedStatus + Nets + (1|Hut)+ (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+summary(mor_4_1_Mix)
+##AIC: 4045.2
+##Variance of the observational random effect: 1.2453
+##Variance of the Hut random effect: 0.0285 
+
+
+mor_4_2 <- glm(Dead~Location + WashedStatus + Nets + WashedStatus * Nets , 
+               data = mor_reg, family = binomial("logit"))
+summary(mor_4_2)
+##AIC: 4251
+
+
+mor_4_2_ran <- glmer(Dead~Location + WashedStatus + Nets + WashedStatus * Nets + (1|marker), 
+               data = mor_reg, family = binomial("logit"))
+mor_4_2_ran <- update(mor_4_2_ran, control = glmerControl(optimizer = "bobyqa"))
+summary(mor_4_2_ran)
+##AIC: 3995.1
+##Variance of the random effect: 0.8805 
+
+
+mor_4_2_hut <- glmer(Dead~Location + WashedStatus + Nets + WashedStatus * Nets + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+
+summary(mor_4_2_hut)
+##AIC: 4210.8
+##Variance of the random effect: 0.08135 
+
+mor_4_2_Mix <- glmer(Dead~Location + WashedStatus + Nets + WashedStatus * Nets 
+                     + (1|Hut) + (1|marker), 
+                     data = mor_reg, family = binomial("logit"))
+mor_4_2_Mix <- update(mor_4_2_Mix, control = glmerControl(optimizer = "bobyqa"))
+
+summary(mor_4_2_Mix)
+##AIC: 3995.3
+##Variance of the observational random effect: 0.83637
+##Variance of the Hut random effect: 0.03794 
+
 
 ###Mixed effect model
 
@@ -357,29 +433,78 @@ summary(mor_2_4_ran)
 ###Variables: Location and others with interaction and observational random effect
 mor_3_1_ran <- glmer(Dead~Location+Treatment + Location*Treatment +(1|marker), 
                      data = mor_reg, family = binomial("logit"))
+
+mor_3_1_ran <- update(mor_3_1_ran, control = glmerControl(optimizer = "bobyqa"))
+
 summary(mor_3_1_ran)
 ##AIC: 3979.8
-##Variance of the random effect: 0.9021 
+##Variance of the random effect: 0.9021
 
-###Model failed to converge
+mor_3_1_mix <- glmer(Dead~Location+Treatment + Location*Treatment +(1|marker) + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+mor_3_1_mix <- update(mor_3_1_mix, control = glmerControl(optimizer = "bobyqa"))
+
+summary(mor_3_1_mix)
+##AIC: 3980.2
+##Variance of the random effect (Observational): 0.86114
+##Variance of the random effect (Hut): 0.03548
+
+
+
 
 mor_3_2_ran <- glmer(Dead~Location+WashedStatus+Location*WashedStatus + (1|marker), 
                      data = mor_reg, family = binomial("logit"))
+mor_3_2_ran <- update(mor_3_2_ran, control = glmerControl(optimizer = "bobyqa"))
+
 summary(mor_3_2_ran)
 ##AIC: 4035.2
 ##Variance of the random effect: 1.348 
 
+mor_3_2_mix <- glmer(Dead~Location+WashedStatus + Location*WashedStatus +(1|marker) + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+mor_3_2_mix <- update(mor_3_2_mix, control = glmerControl(optimizer = "bobyqa"))
+
+summary(mor_3_2_mix)
+##AIC: 4036.7
+##Variance of the random effect (Observational): 1.31807
+##Variance of the random effect (Hut): 0.02477
+
+
 mor_3_3_ran <- glmer(Dead~Location+Insecticide + Location*Insecticide +(1|marker), 
                      data = mor_reg, family = binomial("logit"))
+mor_3_3_ran <- update(mor_3_3_ran, control = glmerControl(optimizer = "bobyqa"))
+
 summary(mor_3_3_ran)
 ##AIC: 4035.9
 ##Variance of the random effect: 1.378 
 
+
+mor_3_3_mix <- glmer(Dead~Location+Insecticide + Location*Insecticide +(1|marker) + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+mor_3_3_mix <- update(mor_3_3_mix, control = glmerControl(optimizer = "bobyqa"))
+
+summary(mor_3_3_mix)
+##AIC: 4037.3
+##Variance of the random effect (Observational): 1.31807
+##Variance of the random effect (Hut): 0.02477
+
+
 mor_3_4_ran <- glmer(Dead~Location+Nets + Location*Nets +(1|marker), 
                      data = mor_reg, family = binomial("logit"))
+mor_3_4_ran <- update(mor_3_4_ran, control = glmerControl(optimizer = "bobyqa"))
+
 summary(mor_3_4_ran)
 ##AIC: 4038.6
 ##Variance of the random effect: 1.378 
+
+mor_3_4_mix <- glmer(Dead~Location+Nets + Location*Nets +(1|marker) + (1|Hut), 
+                     data = mor_reg, family = binomial("logit"))
+mor_3_4_mix <- update(mor_3_4_mix, control = glmerControl(optimizer = "bobyqa"))
+
+summary(mor_3_4_mix)
+##AIC: 4040.1
+##Variance of the random effect (Observational): 1.34632
+##Variance of the random effect (Hut): 0.02637
 
 
 

@@ -475,8 +475,8 @@ predxNet_W %>%
   geom_point(aes(y=mean_pred), color = 'orange', alpha = 0.3)+
   labs(title = "Best model estimates and actual data plot : Treatment + Location + Treatment x Location",
        y= "True/predicted number of mosquitoes")+
-  theme(plot.title = element_text(size = 15, hjust = 0.5),
-        axis.title.y = element_text(size = 15),
+  theme(plot.title = element_text(size = 12, hjust = 0.5),
+        axis.title.y = element_text(size = 12),
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank())+  
@@ -517,7 +517,7 @@ head(test)
 
 
 ggplot(Describe_loc_tr)+
-  geom_boxplot(aes(y=True.value, x=Model, fill = Treatment))+
+  geom_boxplot(aes(y=True.value, x=Model, fill = Treatment), alpha = 0.5)+
   geom_point(aes(y=mean_pred, x=Model), fill = 'red', color = 'red',size = 2, shape = 23)+
   facet_grid(vars(Location), vars(Treatment))+
   labs(title = "Actual and predicted average number of mosquitoes by location and treatment",
