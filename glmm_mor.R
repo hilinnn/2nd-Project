@@ -114,11 +114,27 @@ ggplot(m_mos, aes(y = Mortality, x = Date, color = Nets))+
 ggsave("Dotplot of daily mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
 
-prop.test()
+ggplot(m_mos, aes(y = Mortality, x=Village, color = Nets))+
+  geom_boxplot()+
+  stat_summary(aes(fill = Nets), fun = mean, geom="point", shape=16, size=6, alpha = 0.7) +
+  facet_grid(vars(Location), vars(Treatment))+
+  labs(title = "Mortality by location and treatment")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+ggsave("Mortality by location and treatment.jpeg", 
+       device = jpeg, width = 8, height = 5.5)
+
+
+View(m_mos)
 
 ####Run logistic regression for the mortality
 ###Fixed effect model
+prop.test()
 
+mor_reg$Treatment <- relevel(mor_reg$Treatment, ref = "UTN")
 
 ####Model 0
 mor_0 <- glm(Dead~1, data = mor_reg, family = binomial("log"))
@@ -267,9 +283,14 @@ mor_4_2_Mix <- glmer(Dead~Location + WashedStatus + Nets + WashedStatus * Nets
 mor_4_2_Mix <- update(mor_4_2_Mix, control = glmerControl(optimizer = "bobyqa"))
 
 summary(mor_4_2_Mix)
+
+write.csv(tidy(mor_4_2_Mix), "Mortality 3 var best model.csv")
 ##AIC: 3995.3
 ##Variance of the observational random effect: 0.83637
 ##Variance of the Hut random effect: 0.03794 
+
+###Predict the model outcome
+predict.glm()
 
 
 ###Mixed effect model
@@ -448,7 +469,7 @@ summary(mor_3_1_mix)
 ##AIC: 3980.2
 ##Variance of the random effect (Observational): 0.86114
 ##Variance of the random effect (Hut): 0.03548
-
+write.csv(tidy(mor_3_1_mix), "Mortality 2 var best model fit.csv")
 
 
 

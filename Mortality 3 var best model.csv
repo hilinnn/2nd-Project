@@ -1,0 +1,11 @@
+,effect,group,term,estimate,std.error,statistic,p.value
+1,fixed,NA,(Intercept),-2.296974401,0.221057712,-10.39083586,2.73E-25
+2,fixed,NA,LocationRoom,1.063806004,0.10638504,9.99958264,1.53E-23
+3,fixed,NA,LocationVeranda,0.652186893,0.130715157,4.989374649,6.06E-07
+4,fixed,NA,WashedStatusunwashed,1.107337808,0.275153859,4.024431317,5.71E-05
+5,fixed,NA,WashedStatuswashed,0.252031637,0.271539483,0.928158345,0.353325439
+6,fixed,NA,NetsIG2,1.932244515,0.264075916,7.317003922,2.54E-13
+7,fixed,NA,NetsP2,-0.796984755,0.286520088,-2.781601674,0.005409138
+8,fixed,NA,WashedStatusunwashed:NetsIG2,-2.936730937,0.384447767,-7.638829476,2.19E-14
+9,ran_pars,marker,sd__(Intercept),0.914530525,NA,NA,NA
+10,ran_pars,Hut,sd__(Intercept),0.194778231,NA,NA,NA

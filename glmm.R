@@ -170,7 +170,27 @@ n_mos %>%
 
 ggsave("Average of number of mosquitoes by treatment and location.jpeg",
        width = 8, height = 5.5)
-    
+
+
+
+####Boxplot of the number of mosquitoes by location and treatment and dotplot of the average number
+n_mos %>%
+  ggplot(aes(x = Location, y = Count, color = Location))+
+  geom_boxplot(aes( fill= Location), alpha = 0.5)+
+  stat_summary(fun.y = mean, geom="point", shape=23, size=4, color="red", fill="red") +
+  facet_wrap(vars(Treatment))+
+  labs(title = "Number of mosquitoes in each location by treatment",
+       y = "Number of mosquitoes")+
+  theme(plot.title = element_text(hjust = 0.5, size = 12.5),
+        axis.text.x = element_text(size = 13),
+        axis.text.y = element_text(size = 13),
+        strip.text = element_text(size = 10))
+
+ggsave("Number of mosquitoes by treatment and location.jpeg",
+       width = 8, height = 5.5)
+
+n_mos$Treatment <- relevel(n_mos$Treatment, ref = "UTN")
+
 
 
 
@@ -425,6 +445,9 @@ model_5_5 <- glmer.nb(formula = Count~Location + Treatment + Location*Treatment+
 summary(model_5_5)
 #AIC: 3646.9
 
+###Export the model fit to a csv file
+write.csv(tidy(model_5_5), "Number of mosquitoes (Location and Treatment with interaction).csv")
+
 
 
 ####Obtain the coefficients and 95% C.I of the selected models
@@ -516,24 +539,26 @@ head(test)
 
 
 
-ggplot(Describe_loc_tr)+
-  geom_boxplot(aes(y=True.value, x=Model, fill = Treatment), alpha = 0.5)+
-  geom_point(aes(y=mean_pred, x=Model), fill = 'red', color = 'red',size = 2, shape = 23)+
+ggplot(Describe_loc_tr, aes(fill = Treatment))+
+  geom_boxplot(aes(y=True.value, x=Model), alpha = 0.5)+
+  stat_summary(aes(y=True.value, x=Model),fun = mean, geom="point", shape=22, size=6) +
+  geom_point(aes(y=mean_pred, x=Model), fill = 'red', color = 'red',size = 3, shape = 23)+
   facet_grid(vars(Location), vars(Treatment))+
-  labs(title = "Actual and predicted average number of mosquitoes by location and treatment",
+  labs(title = "Best model fit of the number of mosquitoes",
        y = "Number of mosquitoes")+
   theme(plot.title = element_text(hjust = 0.5),
         axis.title.x = element_blank(),
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+        axis.ticks.x = element_blank(),
+        legend.position = 'none')
 
-ggsave("Boxplots of number of mosquitoes by location and treatment.jpeg", device = 'jpeg',
+ggsave("Best model fit of the number of mosquitoes.jpeg", device = 'jpeg',
        height = 6.5, width = 9)
 
 
 
 
-ggplot(pred_p_W, aes(y = True.Value))+
+ggplot(pred_p_W, aes(x = True.Mean, y = Predicted.value))+
   geom_point(color = 'steelblue') + facet_wrap(~Model) +
   geom_smooth(formula = y~ x, method = "lm", se = FALSE, color = 'orange') +
   geom_abline(slope = 1, intercept = 0, linetype = 2, size = 1)+
@@ -542,7 +567,7 @@ ggplot(pred_p_W, aes(y = True.Value))+
                parse = TRUE,  color = 'orange')+
   geom_abline(slope = 1, intercept = 0, linetype = 2, size = 1)+
   labs(title = "Predicted number of mosquitoes and the best fit line from models with random effect of Sleeper and Week",
-       x = "True value", y = "Predicted number of mosquitoes")+
+       x = "True mean", y = "Predicted number of mosquitoes")+
   theme(plot.title = element_text(hjust = 0.5, size = 12.5),
         axis.text.x = element_text(size = 13),
         axis.text.y = element_text(size = 13),
