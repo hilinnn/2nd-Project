@@ -568,4 +568,40 @@ summary(mor_3_4_mix)
 # sum(n_mos$Count == 0)
 
 
+##########################################################################################
+##########################Log odds ratio plot for the best models#########################
+##########################################################################################
+
+#####Best mortality model: mor_3_1_mix
+mor_reg$marker <- as.factor(mor_reg$marker)
+levels(mor_reg$marker)
+
+
+mor_pred_conf_int <- plot_mor(model = mor_3_1_mix, data = mor_reg)
+View(mor_pred_conf_int)
+
+ggplot(m_mos, aes(y = Mortality, x=Treatment, color = Nets))+
+  geom_boxplot(aes(y = Mortality, x=Treatment))+
+  stat_summary(aes(fill = Nets), fun = mean, geom="point", shape=16, size=6, alpha = 0.7) +
+  facet_wrap(vars(Location), ncol = 1)+
+  labs(title = "Mortality by location and treatment")+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())+
+  geom_errorbar(mor_pred_conf_int, aes(y = mean, x = Treatment, ymin = lwr, ymax = upr))
+
+ggplot(mor_pred_conf_int, aes(x = Treatment,colour = Nets))+
+  geom_point(aes(y = mean))+
+  geom_errorbar(aes(y = mean, ymin = lwr, ymax = upr))+
+  facet_wrap(vars(Location), ncol = 1)+
+  geom_point(aes(y=True.mean, fill = Nets), size = 8, shape = 23, alpha = 0.5)+
+  labs(title = "Best fitted model predicted mortality", y = "Mortality")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Best fitted model predicted mortality.jpeg", device = "jpeg",
+       height = 6, width = 7)
+
+
+
 

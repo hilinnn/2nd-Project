@@ -26,14 +26,14 @@ getcoefsde <- function(model,name){
 }
 
 
-a <- predict(object = model_4_4, 
-             newdata =data.frame(Sleeper = factor(levels(n_mos$Sleeper), levels = levels(n_mos$Sleeper)),
-                                 Location = factor(rep(Loc_levels[1],6), levels = Loc_levels),
-                                 WashedStatus = factor(rep(WS_levels[1],6), levels = WS_levels)),
-             re.form = NULL, se.fit = TRUE)
-
-pred_WS <- pred_num("WashedStatus + Location ", 
-                    data = n_mos, mod = model_4_2, fix_eff = "WashedStatus", rand_eff = "Sleeper")
+# a <- predict(object = model_4_4, 
+#              newdata =data.frame(Sleeper = factor(levels(n_mos$Sleeper), levels = levels(n_mos$Sleeper)),
+#                                  Location = factor(rep(Loc_levels[1],6), levels = Loc_levels),
+#                                  WashedStatus = factor(rep(WS_levels[1],6), levels = WS_levels)),
+#              re.form = NULL, se.fit = TRUE)
+# 
+# pred_WS <- pred_num("WashedStatus + Location ", 
+#                     data = n_mos, mod = model_4_2, fix_eff = "WashedStatus", rand_eff = "Sleeper")
 
 
 ###Return a list of actual frequency and the estimated average number of mosquitoes
@@ -215,4 +215,66 @@ pred_num <- function(model_name, data, mod, fix_eff, rand_eff){
   return(l)
   
 }
+
+
+
+#####Mortality prediction
+
+plot_mor <- function(model, data){
+  out <- data.frame(Location = character(),
+                    Treatment = character(),
+                    mean = integer(),
+                    lwr = integer(),
+                    upr = integer(),
+                    True.mean = integer())
+  
+  rand_eff <- unique(data.frame(marker = data$marker,
+                                Hut = data$Hut))
+  
+  Loc_levels <- levels(data$Location)
+  n_Loc <- length(Loc_levels)
+  Treatment_levels <- levels(data$Treatment)
+  n_Treat <- length(Treatment_levels)
+  k = 1
+  
+  for (i in 1:n_Loc){
+    for (j in 1: n_Treat){
+      test <- predict(model, data.frame(marker = rand_eff[,1],
+                                              Hut = rand_eff[,2],
+                                              Location = rep(Loc_levels[i],215),
+                                              Treatment = rep(Treatment_levels[j],215)),
+                      type = "link", re.form = NULL)
+      
+      mean.test <- mean(test)
+      sd.test <- sqrt(var(test))
+      xmin <- invlogit(mean.test - 1.96 * sd.test)
+      xmax <- invlogit(mean.test + 1.96 * sd.test)
+      xmean <- invlogit(mean.test)
+      
+      tm_data <- data %>% 
+        subset(Location == Loc_levels[i] & Treatment == Treatment_levels[j]) 
+      tm <- sum(tm_data[,"Dead"])/nrow(tm_data)
+      
+      out[k, "Location"] <- Loc_levels[i]
+      out[k, "Treatment"] <- Treatment_levels[j]
+      out[k, "mean"] <- xmean
+      out[k, "lwr"] <- xmin
+      out[k, "upr"] <- xmax
+      out[k, "True.mean"] <- tm
+      
+      k <- k+1
+    }
+  }
+  
+  out <- out %>%
+    mutate(Nets = case_when(Treatment == "IG2.unwash" ~ "IG2",
+                            Treatment == "P3.unwash" ~ "P3",
+                            Treatment == "P2.unwash" ~ "P2",
+                            Treatment == "IG2.wash" ~ "IG2",
+                            Treatment == "P3.wash" ~ "P3",
+                            Treatment == "UTN" ~ "UTN"))
+  return(out)
+
+}
+
 
