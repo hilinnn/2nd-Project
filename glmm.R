@@ -118,9 +118,10 @@ ggsave("Frequency plot of the proportion of mosquitoes.jpeg")
 maxTotal <- max(n_mos$Total)
 
 ggplot(n_mos, aes(x = Total))+
-  geom_histogram(aes(fill = Treatment), binwidth = 1, center = 0)+
+  geom_histogram(aes(fill = Treatment), binwidth = 3, center = 0, alpha = 0.7)+
   facet_wrap(vars(Treatment), ncol = 2)+
-  theme(plot.title = element_text(hjust = 0.5, size = 12))+
+  theme(plot.title = element_text(hjust = 0.5, size = 12),
+        legend.position = "none")+
   labs(title = 'Number of mosquitoes per night by Treatment')+
   scale_x_continuous(breaks = seq(0, maxTotal, 10))
 
@@ -134,7 +135,8 @@ ggplot(n_mos, aes(x = Count))+
   geom_histogram(aes(fill = Location), binwidth = 1, center = 0)+
   facet_wrap(vars(Location))+
   theme(plot.title = element_text(hjust = 0.5, size = 12))+
-  labs(title = 'Number of mosquitoes per night by Location')+
+  labs(title = 'Number of mosquitoes per night by Location',
+       y = "Frequency", x = "Number of mosquitoes")+
   scale_x_continuous(breaks = seq(0, maxCount, 10))
 
 ggsave("Histogram of the number of mosquitoes by Location.jpeg",
@@ -172,6 +174,24 @@ ggsave("Average of number of mosquitoes by treatment and location.jpeg",
        width = 8, height = 5.5)
 
 
+####Compare number of mosquitoes in each location by different treatment
+###Barplot of average number of mosquito in each location by Treatment (With/without errorbar)
+n_mos %>%
+  ggplot(aes(x = Treatment, y = Count, color = Treatment))+
+  geom_boxplot(aes(fill = Treatment), alpha = 0.5)+
+  stat_summary(fun = mean, geom="point", shape=23, size=4, color = 'red', fill = 'red') +
+  #geom_errorbar(aes(x=Location, ymin=min, ymax= max), color = 'steelblue')+
+  facet_grid(Location~.)+
+  labs(title = "Mean and range of number of mosquitoes in each location by treatment",
+       x = "Number of mosquitoes")+
+  theme(plot.title = element_text(hjust = 0.5, size = 12.5),
+        axis.text.x = element_text(size = 13),
+        axis.text.y = element_text(size = 13),
+        strip.text = element_text(size = 10),
+        axis.title.x = element_blank())
+
+ggsave("Average of number of mosquitoes by location and treatment.jpeg")
+
 
 ####Boxplot of the number of mosquitoes by location and treatment and dotplot of the average number
 n_mos %>%
@@ -188,6 +208,8 @@ n_mos %>%
 
 ggsave("Number of mosquitoes by treatment and location.jpeg",
        width = 8, height = 5.5)
+
+
 
 n_mos$Treatment <- relevel(n_mos$Treatment, ref = "UTN")
 
