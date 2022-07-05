@@ -7,7 +7,7 @@ library(MASS)
 library(merTools)
 library(ggpubr)
 library(ggpmisc)
-
+library(fitdistrplus)
 
 
 ####################################################################
@@ -114,21 +114,42 @@ ggplot(m_mos, aes(y = Mortality, x = Date, color = Nets))+
 ggsave("Dotplot of daily mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
 
-ggplot(m_mos, aes(y = Mortality, x=Village, color = Nets))+
+ggplot(m_mos, aes(y = Mortality, x=Treatment, color = Nets))+
   geom_boxplot()+
   stat_summary(aes(fill = Nets), fun = mean, geom="point", shape=16, size=6, alpha = 0.7) +
-  facet_grid(vars(Location), vars(Treatment))+
+  facet_grid(Location~.)+
   labs(title = "Mortality by location and treatment")+
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+  theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("Mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
 
 
-View(m_mos)
+####Plot mortality against the number of mosquitoes to observe the relationship
+ggplot(mor_reg, aes(x = Total, y = Dead, color = Nets, fill = Nets))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Treatment))+
+  labs(title = "Mosquito status correponding to number of mosquito",
+       x = "Number of mosquitoes")+
+  scale_y_continuous( breaks = c(0,1))+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Mosquito status correponding to number of mosquito.jpeg", device = jpeg,
+       height = 5, width = 7.5)
+
+
+####Plot mortality against the number of mosquitoes to observe the relationship
+ggplot(m_mos, aes(x = Total, y = Mortality, color = Nets, fill = Nets))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Treatment))+
+  labs(title = "Mortality correponding to number of mosquito",
+       x = "Number of mosquitoes")+
+  scale_y_continuous( breaks = seq(0,1,0.25), limits = c(0,1))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  stat_smooth(method = "lm", formula = y~x)
+
+ggsave("Mortality correponding to number of mosquito.jpeg", device = jpeg)
+
 
 ####Run logistic regression for the mortality
 ###Fixed effect model
@@ -594,14 +615,19 @@ ggplot(m_mos, aes(y = Mortality, x=Treatment, color = Nets))+
 ggplot(mor_pred_conf_int, aes(x = Treatment,colour = Nets))+
   geom_point(aes(y = mean))+
   geom_errorbar(aes(y = mean, ymin = lwr, ymax = upr))+
-  facet_wrap(vars(Location), ncol = 1)+
-  geom_point(aes(y=True.mean, fill = Nets), size = 8, shape = 23, alpha = 0.5)+
+  facet_grid(Location~.)+
+  geom_point(aes(y=True.mean), size = 6, shape = 23, alpha = 0.5, color = "red",  fill = "red")+
   labs(title = "Best fitted model predicted mortality", y = "Mortality")+
   theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("Best fitted model predicted mortality.jpeg", device = "jpeg",
        height = 6, width = 7)
 
+
+
+####Additional modelling
+####Test the relationship between the mortality and blood-feeding
+mor_fed <- left_join(mor_reg, bf_reg, by =)
 
 
 
