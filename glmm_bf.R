@@ -49,6 +49,92 @@ bf_reg$WashedStatus <- relevel(bf_reg$WashedStatus, ref = "UTN")
 bf_reg$Nets <- relevel(bf_reg$Nets, ref = "UTN")
 
 
+
+
+
+
+#########Graphs
+ggplot(bf_mos, aes(x=Location, y = Bloodfed, colour = Location))+
+  geom_boxplot()+
+  facet_wrap(vars(Treatment))+
+  stat_summary(fun = mean, geom="point", shape=16, size=5, alpha = 0.5, color = "red") +
+  labs(title = "Blood feeding by location and treatment",
+       y = "Blood feeding rate")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Blood feeding by Location and Treatment.jpeg", device = jpeg,
+       width = 8, height = 5.5)
+
+
+ggplot(bf_mos, aes(x=Location, y = Bloodfed, colour = Location))+
+  geom_boxplot()+
+  facet_grid(vars(Insecticide))+
+  stat_summary(fun = mean, geom="point", shape=16, size=5, alpha = 0.5, color = "red") +
+  labs(title = "Blood feeding by location and insecticide",
+       y = "Blood feeding rate")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Blood feeding by Location and Insecticide.jpeg", device = jpeg,
+       width = 8, height = 5.5)
+
+ggplot(bf_mos, aes(x=Date, y = Bloodfed, color = WashedStatus))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Insecticide))+
+  labs(title = "Daily blood feeding rate by location and insecticide",
+       y = "Blood feeding rate")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Daily blood feeding rate by Location and Insecticide.jpeg", device = jpeg,
+       width = 8, height = 5.5)
+
+
+ggplot(bf_mos, aes(x=Total.Room, y = Bloodfed, color = WashedStatus))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Insecticide))+
+  labs(title = "Blood feeding rate by number of mosquitoes",
+       y = "Blood feeding rate", x = "Number of mosquitoes")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Blood feeding rate by number of mosquitoes.jpeg", device = jpeg,
+       width = 8, height = 5.5)
+
+
+ggplot(bf_mos, aes(x=Total, y = Total.Bf, color = WashedStatus))+
+  geom_point()+
+  facet_grid( vars(Insecticide))+
+  labs(title = "Blood feeding rate by number of mosquitoes within the hut",
+       y = "Blood feeding rate", x = "Number of mosquitoes")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("Blood feeding rate by number of mosquitoes within the hut.jpeg", device = jpeg,
+       width = 8, height = 5.5)
+
+
+
+bf_mos_df <- as.tibble(Tengrela_R1A_rm) %>%
+  gather("Loc", "Total.Loc", c("Total.Room","Total.Net","Total.Ver")) %>%
+  mutate(Loc.Tot = case_when(Loc == "Total.Room" ~ "Room",
+                             Loc == "Total.Net" ~ "Net",
+                             Loc == "Total.Ver" ~ "Veranda"))%>%
+  dplyr::select(c("Village", "Date", "Treatment", "Loc.Tot", "Total.Loc",
+                  "Hut", "Sleeper", "marker"))
+
+bf_mos_df <- left_join(bf_mos, bf_mos_df, by = c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker", 
+                                              "Location" ="Loc.Tot"))
+View(bf_mos_df)
+
+ggplot(bf_mos_df, aes(x = Total.Loc, y = Bloodfed, color = Nets, fill = Nets))+
+  geom_point()+
+  facet_grid(vars(Location), vars(Insecticide))+
+  labs(title = "Blood feeding rate correponding to number of mosquitoes",
+       x = "Number of mosquitoes", y = "blood feeding rate")+
+  scale_y_continuous( breaks = seq(0,1,0.25), limits = c(0,1))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  stat_smooth(method = "lm", formula = y~x)
+
+ggsave("Blood feeding rate correponding to number of mosquitoe.jpeg", device = jpeg)
+
+
 ###Intercept only model
 bf_0 <- glm(Fed~1, data = bf_reg, family =  binomial("logit"))
 summary(bf_0)
@@ -205,6 +291,8 @@ summary(bf_2_3_obs)
 #AIC: 3192.6
 #Var: 2.215
 
+write.csv(rbind(tidy(bf_2_3_obs),tidy(bf_2_2_obs)), "Blood feeding best model.csv")
+
 bf_2_4_obs <- glmer(Fed~Location +Nets + (1|marker), data = bf_reg, family =  binomial("logit"))
 summary(bf_2_4_obs)
 #AIC: 3193.4
@@ -224,11 +312,13 @@ summary(bf_2_2_int_obs)
 #AIC: 3199.3
 #Var: 2.196
 
-
+bf_reg$Insecticide <- relevel(as.factor(bf_reg$Insecticide), ref = "UTN")
 bf_2_3_int_obs <- glmer(Fed~Location +Insecticide +Location*Insecticide+ (1|marker), data = bf_reg, family =  binomial("logit"))
 summary(bf_2_3_int_obs) 
 #AIC: 3192.8
 #Var: 2.278
+
+write.csv(tidy(bf_2_3_int_obs), "Blood feeding best model.csv")
 
 
 bf_2_4_int_obs <- glmer(Fed~Location +Nets + Location*Nets+ (1|marker), data = bf_reg, family =  binomial("logit"))

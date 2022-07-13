@@ -223,7 +223,7 @@ n_mos$Treatment <- relevel(n_mos$Treatment, ref = "UTN")
 ####Basic model without any covariate
 model_0 <- glm.nb(formula = Count~1, data = n_mos)
 summary(model_0)
-##3702.4
+##AIC: 3702.4
 
 ###Fitting multinomial model to test the impact of treatment to the location
 
@@ -286,7 +286,7 @@ summary(model_1_4)
 
 model_1_5 <- glm.nb(formula = Count~Nets, data = n_mos)
 summary(model_1_5)
-#AIC: 3700.2
+#AIC: 3700.2 0.7726
 #AIC: 1632.5
 
 
@@ -321,6 +321,10 @@ model_2_3 <- glm.nb(formula = Count~Location + Insecticide, data = n_mos)
 summary(model_2_3)
 #AIC: 3643.8
 
+model_2_4 <- glm.nb(formula = Count~Location + Nets, data = n_mos)
+summary(model_2_4)
+#AIC: 3645.2
+
 
 model_3_1 <- glm.nb(formula = Count~Location + WashedStatus + Location*WashedStatus, data = n_mos)
 summary(model_3_1)
@@ -330,9 +334,13 @@ model_3_2 <- glm.nb(formula = Count~Location + Treatment + Location*Treatment, d
 summary(model_3_2)
 #AIC: 3650.8
 
-model_3_3 <- glm.nb(formula = Count~Location + Insecticide + Location*Insecticide + (1|marker), data = n_mos)
+model_3_3 <- glm.nb(formula = Count~Location + Insecticide + Location*Insecticide , data = n_mos)
 summary(model_3_3)
 #AIC: 3647.3
+
+model_3_4 <- glm.nb(formula = Count~Location + Nets + Location * Nets, data = n_mos)
+summary(model_3_4)
+#AIC: 3652.2
 
 
 # Model_1s <- list(model_1_1, model_1_2,model_1_3,model_1_4, model_2_1, model_2_2, model_2_3,
@@ -350,7 +358,6 @@ model_4_1 <- glmer.nb(formula = Count~Location + (1|Sleeper), data = n_mos)
 summary(model_4_1)
 #AIC: 3646.2
 
-predictInterval(model_4_1, newdata = )
 
 model_4_1_hut <- glmer.nb(formula = Count~Location + (1|Hut), data = n_mos)
 summary(rePCA(model_4_1_hut))
@@ -376,6 +383,33 @@ model_4_5 <- glmer.nb(formula = Count~Location + Treatment + Location*Treatment+
 summary(model_4_5)
 #AIC: 3648.3
 
+
+###########################################################
+############Include observational random effect############
+###########################################################
+
+model_5_1 <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker), data = n_mos)
+summary(model_5_1)
+#AIC: 3633.5
+##Var: 0.103
+
+
+
+model_5_2 <- glmer.nb(formula = Count~Location + Treatment + (1|marker), data = n_mos)
+summary(model_5_2)
+#AIC: 3639.1
+##Var: 0.1046
+
+model_5_3 <- glmer.nb(formula = Count~Location + WashedStatus+ Location * WashedStatus+ (1|marker), data = n_mos)
+summary(model_5_3)
+#AIC: 3640.5
+##Var: 0.1047
+
+model_5_4 <- glmer.nb(formula = Count~Location + Treatment + Location* Treatment + (1|marker), data = n_mos)
+model_5_4 <- update(model_5_4, control = glmerControl(optimizer = "bobyqa"))
+summary(model_5_4)
+#AIC: 3646.7
+##Var: 0.1042
 
 
 
@@ -445,30 +479,50 @@ ggsave("Model comparisons with random effect of Sleeper.jpeg", device = 'jpeg',
 ############Include random effect of Sleeper and week###############
 ####################################################################
 
-model_5_1 <- glmer.nb(formula = Count~Location + (1|Sleeper) + (1|Week) , data = n_mos)
-summary(model_5_1)
-#AIC: 3644.2
+model_6_1 <- glmer.nb(formula = Count~Location + (1|marker)+ (1|Sleeper) + (1|Week) , data = n_mos)
+summary(model_6_1)
+#AIC: 3643.4
 
-model_5_2 <- glmer.nb(formula = Count~Location + WashedStatus + (1|Sleeper)  + (1|Week) , data = n_mos)
-summary(model_5_2)
-#AIC: 3634.5
+model_6_2 <- glmer.nb(formula = Count~Location + WashedStatus + (1|marker) + (1|Sleeper)  + (1|Week) , data = n_mos)
+ss <- getME(model_6_2,c("theta","fixef"))
+model_6_2 <- update(model_6_2,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                optCtrl=list(maxfun=4e5)))
+summary(model_6_2)
+#AIC: 3634.2
+#Var: 0.06792 (observational) 0.01850 (Sleeper) 0.01133 (Week)
 
-model_5_3 <- glmer.nb(formula = Count~Treatment + Location + (1|Sleeper)  + (1|Week) , data = n_mos)
-summary(model_5_3)
-#AIC: 3639.9
 
-model_5_4 <- glmer.nb(formula = Count~WashedStatus + Location + WashedStatus * Location 
-                      +(1|Sleeper) + (1|Week), data = n_mos)
-summary(model_5_4)
-#AIC: 3641.5
+model_6_3 <- glmer.nb(formula = Count~Treatment + Location + (1|marker) + (1|Sleeper)  + (1|Week) , data = n_mos)
+ss <- getME(model_6_3,c("theta","fixef"))
+model_6_3 <- update(model_6_3,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                            optCtrl=list(maxfun=4e5)))
+summary(model_6_3)
+#AIC: 3639.6
+#Var: 0.06838 (observational) 0.01944 (Sleeper) 0.01154 (Week)
 
-model_5_5 <- glmer.nb(formula = Count~Location + Treatment + Location*Treatment+ 
-                        (1|Sleeper)  + (1|Week), data = n_mos)
-summary(model_5_5)
-#AIC: 3646.9
+
+model_6_4 <- glmer.nb(formula = Count~WashedStatus + Location + WashedStatus * Location 
+                      + (1|marker) +(1|Sleeper) + (1|Week), data = n_mos)
+ss <- getME(model_6_4,c("theta","fixef"))
+model_6_4 <- update(model_6_4,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                            optCtrl=list(maxfun=4e5)))
+summary(model_6_4)
+#AIC: 3641.1
+#Var: 0.06919 (observational) 0.01840 (Sleeper) 0.01154 (Week)
+
+
+model_6_5 <- glmer.nb(formula = Count~Location + Treatment + Location*Treatment+ 
+                         (1|marker)+ (1|Sleeper)  + (1|Week), data = n_mos)
+ss <- getME(model_6_5,c("theta","fixef"))
+model_6_5 <- update(model_6_5,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                            optCtrl=list(maxfun=4e5)))
+summary(model_6_5)
+#AIC: 3646.8
+#Var: 0.06639 (observational) 0.01996 (Sleeper) 0.01270 (Week)
+
 
 ###Export the model fit to a csv file
-write.csv(tidy(model_5_5), "Number of mosquitoes (Location and Treatment with interaction).csv")
+write.csv(rbind(tidy(model_5_1), tidy(model_6_5)), "Number of mosquitoes (Location and Treatment with interaction).csv")
 
 
 

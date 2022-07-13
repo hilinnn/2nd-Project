@@ -6,6 +6,7 @@ gen_mo <- function(data){
                     Location = character(),
                     Dead = integer(),
                     Total = integer(),
+                    Total.Loc = integer(),
                     Hut= character(),
                     Sleeper= character(),
                     marker = integer(),
@@ -16,21 +17,25 @@ gen_mo <- function(data){
     
     n_dr <- data[i, "Dead.Room"]
     n_ar <- data[i, "Total.Room"] - n_dr
-    
-    a <- cbind(data[rep(i, n_dr), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Room", n_dr), "Dead" = rep(1, n_dr)))
-    b <- cbind(data[rep(i, n_ar), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Room", n_ar), "Dead" = rep(0, n_ar)))
+    room <- data$Total.Room[i]
+
+    a <- cbind(data[rep(i, n_dr), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Room", n_dr), "Dead" = rep(1, n_dr), "Total.Loc" = rep(room, n_dr)))
+    b <- cbind(data[rep(i, n_ar), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Room", n_ar), "Dead" = rep(0, n_ar), "Total.Loc" = rep(room, n_ar)))
     
     n_dn <- data[i, "Dead.Net"]
     n_an <- data[i, "Total.Net"] - n_dn
+    net <- data$Total.Net[i]
     
-    c <- cbind(data[rep(i, n_dn), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Net", n_dn), "Dead" = rep(1, n_dn)))
-    d <- cbind(data[rep(i, n_an), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Net", n_an), "Dead" = rep(0, n_an)))
+    
+    c <- cbind(data[rep(i, n_dn), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Net", n_dn), "Dead" = rep(1, n_dn), "Total.Loc" = rep(net, n_dn)))
+    d <- cbind(data[rep(i, n_an), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Net", n_an), "Dead" = rep(0, n_an), "Total.Loc" = rep(net, n_an)))
     
     n_dv <- data[i, "Dead.Ver"]
     n_av <- data[i, "Total.Ver"] - n_dv
+    ver <- data$Total.Ver[i]
     
-    e <- cbind(data[rep(i, n_dv), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Veranda", n_dv), "Dead" = rep(1, n_dv)))
-    f <- cbind(data[rep(i, n_av), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Veranda", n_av), "Dead" = rep(0, n_av)))
+    e <- cbind(data[rep(i, n_dv), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Veranda", n_dv), "Dead" = rep(1, n_dv), "Total.Loc" = rep(ver, n_dv)))
+    f <- cbind(data[rep(i, n_av), c("Village", "Date", "Treatment", "Hut", "Sleeper", "marker","WashedStatus", "Insecticide","Nets", "Total")], data.frame("Location" = rep("Veranda", n_av), "Dead" = rep(0, n_av), "Total.Loc" = rep(ver, n_av)))
     
     p <- rbind(a,b,c,d,e,f)
     

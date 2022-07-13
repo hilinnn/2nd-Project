@@ -1,0 +1,13 @@
+,effect,group,term,estimate,std.error,statistic,p.value
+1,fixed,NA,(Intercept),3.063,0.302,10.142,0.000
+2,fixed,NA,LocationRoom,-3.232,0.136,-23.796,0.000
+3,fixed,NA,LocationVeranda,-3.258,0.163,-19.979,0.000
+4,fixed,NA,Insecticidealpha cypermethrin,-1.033,0.348,-2.970,0.003
+5,fixed,NA,Insecticidedeltamethrin,-0.978,0.331,-2.958,0.003
+6,ran_pars,marker,sd__(Intercept),1.488,NA,NA,NA
+7,fixed,NA,(Intercept),3.063,0.302,10.143,0.000
+8,fixed,NA,LocationRoom,-3.233,0.136,-23.796,0.000
+9,fixed,NA,LocationVeranda,-3.258,0.163,-19.980,0.000
+10,fixed,NA,WashedStatusunwashed,-1.026,0.331,-3.095,0.002
+11,fixed,NA,WashedStatuswashed,-0.968,0.346,-2.793,0.005
+12,ran_pars,marker,sd__(Intercept),1.488,NA,NA,NA
