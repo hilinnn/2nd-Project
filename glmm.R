@@ -8,6 +8,7 @@ library(merTools)
 library(ggpubr)
 library(ggpmisc)
 library(nnet)
+library(cowplot)
 
 source("~/Desktop/Second project/R/glmm_functions.R")
 

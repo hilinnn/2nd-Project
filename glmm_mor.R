@@ -887,7 +887,6 @@ mor_fed_num_ms <- glmer(Dead~Fed + Location + Treatment + Location * Treatment +
 ss <- getME(mor_fed_num_ms,c("theta","fixef"))
 mor_fed_num_ms <- update(mor_fed_num_ms,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                   optCtrl=list(maxfun=5e5)))
-
 summary(mor_fed_num_ms)
 #AIC: 3819.9
 #Var: 1.578 obs 0.206 Sleeper 

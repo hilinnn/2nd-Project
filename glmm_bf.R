@@ -360,4 +360,5 @@ summary(bf_2_4_int_rand)
 #AIC: 3198.4
 #Var: 2.256
 
-
+summary(glmer(Fed~Location +Insecticide +WashedStatus+ Insecticide *WashedStatus+  (1|marker),
+              data = bf_reg, family =  binomial("logit")))
