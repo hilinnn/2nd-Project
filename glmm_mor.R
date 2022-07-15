@@ -116,12 +116,13 @@ ggplot(m_mos, aes(y = Mortality, x = Date, color = Nets))+
 ggsave("Dotplot of daily mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
 
-ggplot(m_mos, aes(y = Mortality, x=Location, color = Location))+
-  geom_boxplot()+
-  stat_summary(fun = mean, geom="point", shape=16, size=6, alpha = 0.6, color = "red") +
+ggplot(m_mos, aes(y = Mortality, x=Location, color = Location,  fill = Location))+
+  geom_boxplot(alpha=0.5)+
+  stat_summary(fun = mean, geom="point", shape=18, size=6, alpha = 0.7, color = "red") +
   facet_wrap(vars(Treatment))+
   labs(title = "Mortality by location and treatment")+
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme_minimal_hgrid()
 
 ggsave("Mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
@@ -166,6 +167,14 @@ ggplot(m_mos_df, aes(x = Total.Loc, y = Mortality, color = Nets, fill = Nets))+
 ggsave("Mortality correponding to number of mosquito.jpeg", device = jpeg)
 
 
+m_f_mos <- m_mos %>%
+  dplyr::select(c("Village", "Date", "Location", "Treatment","WashedStatus", "Mortality", "marker", "Hut", "Sleeper", "Nets")) %>%
+  left_join(bf_mos, by = c("Village", "Date", "Location", "Treatment","WashedStatus", "marker", "Hut", "Sleeper", "Nets"))
+  
+ggplot(m_f_mos, aes(y=Mortality, x=Bloodfed, color = Nets)) +
+  geom_point()+
+  facet_grid( vars(Location), vars(Treatment))
+  
 ####Run logistic regression for the mortality
 ###Fixed effect model
 prop.test()
