@@ -159,12 +159,11 @@ ggplot(m_mos_df, aes(x = Total.Loc, y = Mortality, color = Nets, fill = Nets))+
   geom_point()+
   facet_grid(vars(Location), vars(Treatment))+
   labs(title = "Mortality correponding to number of mosquitoes",
-       x = "Number of mosquitoes")+
-  scale_y_continuous( breaks = seq(0,1,0.25), limits = c(0,1))+
+       x = "Number of mosquitoes", y = "Mortality")+
   theme(plot.title = element_text(hjust = 0.5))+
-  stat_smooth(method = "lm", formula = y~x)
+  theme_bw()
 
-ggsave("Mortality correponding to number of mosquito.jpeg", device = jpeg)
+ggsave("1.jpeg", device = jpeg)
 
 
 m_f_mos <- m_mos %>%
@@ -173,7 +172,22 @@ m_f_mos <- m_mos %>%
   
 ggplot(m_f_mos, aes(y=Mortality, x=Bloodfed, color = Nets)) +
   geom_point()+
-  facet_grid( vars(Location), vars(Treatment))
+  facet_grid( vars(Location), vars(Treatment))+
+  theme_bw()+
+  labs(title = "Mortality rate against blood-feeding rate")+
+  scale_x_continuous(labels = c(0,0.25,0.5,0.75,1))+
+  theme(axis.title.x = element_text(size = 12),
+        axis.title.y = element_text(size = 12),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 11))
+
+ggsave("Mortality rate against blood-feeding rate.jpeg", device = "jpeg")
+
+ggplot(mor_fed, aes(y=Dead, x=Fed, color = Nets)) +
+  geom_point()+
+  facet_grid( vars(Location), vars(Treatment))+
+  geom_smooth(formula = y~x, method = "glm",method.args= list(family="binomial"))
   
 ####Run logistic regression for the mortality
 ###Fixed effect model
@@ -819,6 +833,10 @@ colnames(mor_fed)[14] <- "Fed"
 
 mor_fed$Treatment <- relevel(as.factor(mor_fed$Treatment), ref = "UTN")
 mor_fed$Location <- relevel(as.factor(mor_fed$Location), ref = "Net")
+
+mor_f <- glm(Dead~Fed,data = mor_fed, family = binomial("logit"))
+summary(mor_f)
+#AIC: 4785.8
 
 
 mor_fed_0 <- glm(Dead ~ Fed + Location + Treatment + Location * Treatment,  
