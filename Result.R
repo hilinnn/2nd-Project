@@ -85,6 +85,7 @@ summary(bf_num_loc_Rand)
 write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
 
 
+
 ###Summary fig
 ggplot(bf_mos, aes(x=Location, y = Bloodfed, colour = Location, fill = Location))+
   geom_boxplot(alpha = 0.5)+
@@ -172,11 +173,51 @@ ggsave("Mortality corresponding number of mosquitoes.jpeg", device = jpeg)
 
 
 ###Blood feeding rate
+mf_mos <- m_mos %>%
+  dplyr::select(c("Village","Date","Treatment","Location", "Mortality", "Insecticide",
+                  "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
+  right_join(mor_fed, by=c("Village","Date","Treatment","Location", "Insecticide",
+                           "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
+mf_mos <- bf_mos %>%
+  dplyr::select(c("Village","Date","Treatment","Location", "Bloodfed", "Insecticide",
+                  "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
+  right_join(mf_mos, by=c("Village","Date","Treatment","Location", "Insecticide",
+                           "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
 
+ggplot(mf_mos, aes(color = Nets, fill = Nets))+
+  geom_point(aes(x = Bloodfed, y = Mortality))+
+  facet_grid(vars(Location), vars(Treatment))+
+  labs(title = "Mortality correponding to blood-feeding",
+       x = "Blood-feeding rate", y = "Mortality")+
+  scale_x_continuous(labels = c(0, 0.25,0.5,0.75,1.0))+
+  geom_smooth(aes(x = Fed, y = Dead),formula = y~x,method = glm, method.args= list(family="binomial"))+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text = element_text(size = 11),
+        axis.title = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        legend.text = element_text(size = 11),
+        legend.title = element_text(size = 12))
 
+ggsave("Mortality corresponding blood feeding.jpeg", device = jpeg)
 
-
-
+summary(glm(Dead~Fed, data = mf_mos, family = binomial("logit")))
+# Deviance Residuals: 
+#   Min       1Q   Median       3Q      Max  
+# -0.9438  -0.9438  -0.7939   1.4305   1.6176  
+# 
+# Coefficients:
+#   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept) -0.57775    0.04795 -12.049  < 2e-16 ***
+#   Fed         -0.41536    0.06968  -5.961 2.51e-09 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# (Dispersion parameter for binomial family taken to be 1)
+# 
+# Null deviance: 4817.5  on 3871  degrees of freedom
+# Residual deviance: 4781.8  on 3870  degrees of freedom
+# AIC: 4785.8
 
 
 

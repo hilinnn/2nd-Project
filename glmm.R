@@ -256,8 +256,24 @@ z_multimod_Tr_Loc <- summary(multimod_Tr_Loc)$coefficients/summary(multimod_Tr_L
 p_multimod_Tr_Loc <- (1-pnorm(abs(z_multimod_Tr_Loc),0,1))*2
 
 
+multimod_Loc_Tot <- multinom(Location ~ Total, data = n_mos) 
+summary(multimod_Loc_Tot)
 
-n_mos$Nets <- relevel(n_mos$Nets, ref = "UTN")
+
+multimod_Loc_Count <- multinom(Location ~ Count, data = n_mos) 
+summary(multimod_Loc_Count)
+
+multimod_Loc_Cou_tot <- multinom(Location ~ Count + Total, data = n_mos) 
+summary(multimod_Loc_Cou_tot)
+
+z_model_tot_Loc <- summary(multimod_Loc_Cou_tot)$coefficients/summary(multimod_Loc_Cou_tot)$standard.errors
+p_model_tot_Loc <- (1-pnorm(abs(z_model_tot_Loc),0,1))*2
+
+
+model_tot_l <- glm(Count~Location + Total + Location*Total,  data = n_mos)
+summary(model_tot_l)
+
+rn_mos$Nets <- relevel(n_mos$Nets, ref = "UTN")
 multimod_Ne_Loc <- multinom(Location ~ Nets+Count, data = n_mos)
 # # weights:  18 (10 variable)
 # initial  value 711.900763 
