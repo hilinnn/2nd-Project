@@ -1,14 +1,6 @@
 ####glmms 
-library(lme4)
-library(tidyverse)
-library(DHARMa)
-library(lubridate)
-library(MASS)
-library(merTools)
-library(ggpubr)
-library(ggpmisc)
-library(nnet)
-library(cowplot)
+library(lme4);library(tidyverse);library(DHARMa);library(lubridate);library(MASS);library(merTools);library(ggpubr);
+library(ggpmisc);library(nnet);library(cowplot)
 
 source("~/Desktop/Second project/R/glmm_functions.R")
 
@@ -394,21 +386,24 @@ View(select(n_mos, c("Treatment", "Hut", "Sleeper", "Location","Date")))
 model_4_2 <- glmer.nb(formula = Count~Location + WashedStatus + (1|Sleeper)  , data = n_mos)
 summary(model_4_2)
 #AIC: 3635.8
-
+#Var: 0.02138
 
 model_4_3 <- glmer.nb(formula = Count~Treatment + Location + (1|Sleeper)  , data = n_mos)
 summary(model_4_3)
 #AIC: 3641.2
+#Var: 0.02259
 
 model_4_4 <- glmer.nb(formula = Count~WashedStatus + Location + WashedStatus * Location 
                       +(1|Sleeper), data = n_mos)
 summary(model_4_4)
 #AIC: 3642.9
+#Var: 0.02133
 
 
 model_4_5 <- glmer.nb(formula = Count~Location + Treatment + Location*Treatment+ (1|Sleeper), data = n_mos)
 summary(model_4_5)
 #AIC: 3648.3
+#Var: 0.02247
 
 
 ###########################################################

@@ -1,0 +1,8 @@
+,effect,group,term,estimate,std.error,statistic,p.value
+1,fixed,NA,(Intercept),1.779,0.202,8.830,0.000
+2,fixed,NA,LocationRoom,0.130,0.107,1.215,0.225
+3,fixed,NA,LocationVeranda,-0.771,0.113,-6.816,0.000
+4,fixed,NA,WashedStatusunwashed,-0.432,0.137,-3.156,0.002
+5,fixed,NA,WashedStatuswashed,-0.138,0.145,-0.958,0.338
+6,fixed,NA,trial_temp_range,0.095,0.044,2.173,0.030
+7,ran_pars,marker,sd__(Intercept),0.294,NA,NA,NA

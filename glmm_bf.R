@@ -486,6 +486,36 @@ summary(bf_num_loc_Rand)
 write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
 
 
+####Test model contains Treatment with or w/o location
+
+bf_best_treat_loc <- glmer(Fed~Total.Loc + Location + Treatment
+      + (1|marker), data = mor_fed, family =  binomial("logit"))
+ss <- getME(bf_best_treat_loc,c("theta","fixef"))
+bf_best_treat_loc <- update(bf_best_treat_loc,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                        optCtrl=list(maxfun=3e5)))
+summary(bf_best_treat_loc)
+##AIC:3175.9
+##Var: 2.236
+
+
+bf_best_treat <- glmer(Fed~Total.Loc + Treatment
+                       + (1|marker), data = mor_fed, family =  binomial("logit"))
+ss <- getME(bf_best_treat,c("theta","fixef"))
+bf_best_treat <- update(bf_best_treat,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                    optCtrl=list(maxfun=3e5)))
+summary(bf_best_treat)
+##AIC: 4023.1
+##Var: 3.151
+ 
+
+bf_best_treat_int <- glmer(Fed~Total.Loc + Treatment + Total.Loc * Treatment
+                       + (1|marker), data = mor_fed, family =  binomial("logit"))
+
+summary(bf_best_treat_int)
+##AIC: 4016.8
+##Var: 3.146
+
+
 
 
 

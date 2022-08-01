@@ -47,6 +47,12 @@ model_5_1 <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker), data 
 summary(model_5_1)
 
 
+model_5_1_trial_range <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker) + trial_temp_range, data = n_mos)
+summary(model_5_1_trial_range)
+
+write.csv(tidy(model_5_1_trial_range), "Mosquito count best model.csv")
+
+
 ###Summary fig
 n_mos %>%
   ggplot(aes(x = Location, y = Count, color = Location))+
@@ -73,6 +79,11 @@ ggsave("Average of number of mosquitoes by location and treatment.jpeg")
 
 
 ####model
+standard_bf <- glm(Fed~Treatment, data = mf_mos_temp,
+                    family = binomial("logit"))
+summary(standard_bf)
+##AIC: 5250.7
+
 bf_num_loc_Rand <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
                          + (1|marker)  + (1|Sleeper), data = mor_fed, family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand,c("theta","fixef"))
@@ -123,18 +134,43 @@ ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
 ####Mortality
 
 ###Model
-mor_fed_num_ms <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                          (1 | marker)+ (1 | Sleeper), data = mor_fed, family = binomial("logit"))
-ss <- getME(mor_fed_num_ms,c("theta","fixef"))
-mor_fed_num_ms <- update(mor_fed_num_ms,start=ss,control=glmerControl(optimizer="bobyqa",
-                                                                      optCtrl=list(maxfun=5e5)))
-summary(mor_fed_num_ms)
-#AIC: 3819.9
-#Var: 1.578 obs 0.206 Sleeper 
-
-write.csv(tidy(mor_fed_num_ms), "Mortality n blood-fed n number best model.csv")
+mf_mos_temp$Treatment <- relevel(mf_mos_temp$Treatment, ref = "UTN")
+standard_mor <- glm(Dead~Treatment, data = mf_mos_temp,
+                      family = binomial("logit"))
+summary(standard_mor)
+##AIC: 4410.3
 
 
+mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
+                                         diurnal_temp_range + (1 | marker)+ (1 | Sleeper), data = mf_mos_temp, family = binomial("logit"))
+ss <- getME(mor_fed_num_ms_diu_temp_range,c("theta","fixef"))
+mor_fed_num_ms_diu_temp_range <- update(mor_fed_num_ms_diu_temp_range,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                                                    optCtrl=list(maxfun=5e5)))
+summary(mor_fed_num_ms_diu_temp_range)
+###AIC: 3817.7
+###Var: 1.5223(observational) 0.2152(Sleeper)
+
+write.csv(tidy(mor_fed_num_ms_diu_temp_range), "Mortality n blood-fed n number n temp best model.csv")
+
+
+
+# n <- mf_mos_temp %>%
+#   count(Treatment, Location)
+# n <- as.data.frame(n)
+# 
+# bf_pred <- NULL
+# 
+# for (i in 1:nrow(n)){
+#   Count <- n[i,1] - 1
+#   a <- seq(0,1,1/Count)
+#   bf_pred <- append(bf_pred,a)
+# }
+# View(bf_pred)
+
+
+
+predict_mor <- predict(mor_fed_num_ms_diu_temp_range, mf_mos_temp, type = "response")
+pred_mor <- cbind(mf_mos_temp, predict_mor)
 
 ####summary graph
 ggplot(m_mos, aes(y = Mortality, x=Location, color = Location,  fill = Location))+
@@ -149,28 +185,6 @@ ggsave("Mortality by location and treatment.jpeg",
        device = jpeg, width = 8, height = 5.5)
 
 
-###Number of mosquitoes
-m_mos %>%
-  dplyr::select(c("Village","Date","Treatment","Location", "Mortality", "Insecticide",
-                    "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
-  right_join(mor_fed, by=c("Village","Date","Treatment","Location", "Insecticide",
-                         "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
-  ggplot(aes(color = Nets, fill = Nets))+
-  geom_point(aes(x = Total.Loc, y = Mortality))+
-  facet_grid(vars(Location), vars(Treatment))+
-  labs(title = "Mortality correponding to number of mosquitoes",
-       x = "Number of mosquitoes", y = "Mortality")+
-  geom_smooth(aes(x = Total.Loc, y = Dead),formula = y~x,method = glm, method.args= list(family="binomial"))+
-  theme_bw()+
-  theme(plot.title = element_text(hjust = 0.5),
-        axis.text = element_text(size = 11),
-        axis.title = element_text(size = 12),
-        strip.text = element_text(size = 12),
-        legend.text = element_text(size = 11),
-        legend.title = element_text(size = 12))
-
-ggsave("Mortality corresponding number of mosquitoes.jpeg", device = jpeg)
-
 
 ###Blood feeding rate
 mf_mos <- m_mos %>%
@@ -184,13 +198,20 @@ mf_mos <- bf_mos %>%
   right_join(mf_mos, by=c("Village","Date","Treatment","Location", "Insecticide",
                            "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
 
+mf_mos <- left_join(mf_mos, b, by=c("Village","Date","Treatment","Location", "Insecticide",
+                     "Total","WashedStatus","Sleeper","marker","Nets", "Hut",
+                     "Mortality", "Dead", "Total.Loc", "Fed","Bloodfed"))
+
+mf_mos$Treatment <- relevel(mf_mos$Treatment, ref = "UTN")
+
 ggplot(mf_mos, aes(color = Nets, fill = Nets))+
   geom_point(aes(x = Bloodfed, y = Mortality))+
   facet_grid(vars(Location), vars(Treatment))+
   labs(title = "Mortality correponding to blood-feeding",
        x = "Blood-feeding rate", y = "Mortality")+
   scale_x_continuous(labels = c(0, 0.25,0.5,0.75,1.0))+
-  geom_smooth(aes(x = Fed, y = Dead),formula = y~x,method = glm, method.args= list(family="binomial"))+
+  geom_smooth(data = pred_mor, aes(x=Fed, y = predict_mor), col = "black", method = "glm", 
+              method.args = list(family = "binomial"))+
   theme_bw()+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text = element_text(size = 11),
@@ -201,7 +222,7 @@ ggplot(mf_mos, aes(color = Nets, fill = Nets))+
 
 ggsave("Mortality corresponding blood feeding.jpeg", device = jpeg)
 
-summary(glm(Dead~Fed, data = mf_mos, family = binomial("logit")))
+# summary(glm(Dead~Fed, data = mf_mos, family = binomial("logit")))
 # Deviance Residuals: 
 #   Min       1Q   Median       3Q      Max  
 # -0.9438  -0.9438  -0.7939   1.4305   1.6176  
