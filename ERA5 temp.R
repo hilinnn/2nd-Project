@@ -38,20 +38,23 @@ View(BF_temp)
 
 
 
-ggplot(data = BF_data, aes(x = Date, y = temp, col = Site)) +
-  geom_line(size = 0.75) +
-  theme_bw() + theme(text = element_text(size = 15)) +
-  xlab("Time") +
-  ylab("Temperature (°C)")
 
 ###Plot the diurnal temperature range and the night temperature range together
 ggplot(data = BF_data, aes(x = Date, y = temp)) +
-  geom_line(size = 0.75, color = "orange") +
+  geom_line(size = 0.75, color = "orange", alpha = 0.8) +
   geom_line(data = subset(BF_data, time >= 20 | time <= 6), 
-             aes(x = Date, y = temp), col = "grey", size = 0.6, alpha = 0.8) +
+             aes(x = Date, y = temp), col = "skyblue", size = 0.6) +
+  geom_line(data = BF_temp, aes(x=Date, y= trial_mean_temp),
+            size = 0.75, color = "red") +
+  geom_line(data = BF_temp, aes(x=Date, y= mean_temp),
+            size = 0.75, color = "black") +
   theme_bw() + theme(text = element_text(size = 15)) +
-  xlab("Time") +
+  xlab("Date") +
   ylab("Temperature (°C)")
+
+ggsave("Temperature data.jpeg", device = jpeg)
+
+###Plot by Issac
 
 
 

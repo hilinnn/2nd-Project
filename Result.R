@@ -84,6 +84,11 @@ standard_bf <- glm(Fed~Treatment, data = mf_mos_temp,
 summary(standard_bf)
 ##AIC: 5250.7
 
+standard_bf_ws <- glm(Fed~WashedStatus, data = mf_mos_temp,
+                   family = binomial("logit"))
+summary(standard_bf_ws)
+##AIC: 5306.7
+
 bf_num_loc_Rand <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
                          + (1|marker)  + (1|Sleeper), data = mor_fed, family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand,c("theta","fixef"))
@@ -95,7 +100,7 @@ summary(bf_num_loc_Rand)
 
 write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
 
-
+pred_bf <- predict(bf_num_loc_Rand, mor_fed, type = "response")
 
 ###Summary fig
 ggplot(bf_mos, aes(x=Location, y = Bloodfed, colour = Location, fill = Location))+
@@ -116,13 +121,16 @@ bf_quant <- bf_mos%>%
                   "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
   right_join(mor_fed, by=c("Village","Date","Treatment","Location", "Insecticide",
                            "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
+bf_quant <- cbind(bf_quant, pred_bf)
+
 bf_quant$WashedStatus <-  relevel(as.factor(bf_quant$WashedStatus), ref = "UTN")
   ggplot(bf_quant, aes(color = Location, fill = Location))+
   geom_point(aes(x = Total.Loc, y = Bloodfed))+
   facet_grid(vars(Location), vars(WashedStatus))+
   labs(title = "Blood-feeding correponding to number of mosquitoes",
        x = "Number of mosquitoes", y = "Blood-feeding rate")+
-  geom_smooth(aes(x = Total.Loc, y = Fed),formula = y~x,method = glm, method.args= list(family="binomial"))+
+  geom_smooth(aes(x = Total.Loc, y = pred_bf),formula = y~x,method = glm, 
+              method.args= list(family="binomial"), col = "black")+
   theme_bw()
 
 ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
@@ -140,6 +148,10 @@ standard_mor <- glm(Dead~Treatment, data = mf_mos_temp,
 summary(standard_mor)
 ##AIC: 4410.3
 
+standard_mor_mix <- glmer(Dead~Treatment + (1|marker) + (1|Hut), data = mf_mos_temp,
+                    family = binomial("logit"))
+summary(standard_mor_mix)
+##AIC: 4093.3
 
 mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
                                          diurnal_temp_range + (1 | marker)+ (1 | Sleeper), data = mf_mos_temp, family = binomial("logit"))

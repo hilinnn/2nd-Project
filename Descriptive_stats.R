@@ -88,8 +88,17 @@ box_4loc(Tengrela_R1A_rm,
 ggsave("Tengrela R1A plot.jpeg", device = "jpeg")
 
 
+a <- dataCB_rm %>%
+  subset(Date < "2020-01-01" & Village == "Tengrela") %>%
+  dplyr::select(!c(Round, Village,Year, Week, Day, Row.ID, nDay, marker)) %>%
+  group_by(Treatment, Area) %>%
+  summarise(A.gambiae = sum(An.gambiae.sl),
+            Other.Anophelines = sum(Other.Anophelines),
+            Aedes.sp = sum(Aedes.sp),
+            Culex.sp = sum(Culex.sp),
+            Mansonia.sp = sum(Mansonia.sp))
 
-
+write.csv(a, "Data sum.csv")
 
 
 ###Round 2, Tengrela

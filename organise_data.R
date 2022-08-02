@@ -249,11 +249,14 @@ prob <- dataCB%>%
   subset(prob < 0)
 View(dataCB[c(79,1144,5167,23447),])
 
-
+View(dataCB_rm)
 ####Remove the 4 rows with errors
 dataCB_rm <- dataCB
 
 dataCB_rm[c(79,1144,5167,23447),17:23] <- rep(0,7)
+
+error_find <- dataCB_rm %>% subset(Date < "2020-01-01")
+error_find[c(79,1144,5167),]
 
 dfW_rm <- data.frame('Village'=character(), 'Round' = integer(), 'Treatment' = character(),
                      'Nets' = character(), 'Date' = character(), 
