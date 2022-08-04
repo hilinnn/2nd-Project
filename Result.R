@@ -1,4 +1,6 @@
 #####Store the function of the models and graaphs included in the result part
+library(lme4);library(tidyverse);library(DHARMa);library(lubridate);library(MASS)
+library(merTools);library(ggpubr);library(ggpmisc);library(fitdistrplus);library(broom)
 
 
 ####Method 
@@ -37,6 +39,22 @@ ggsave("Negative binomial fits.jpeg", device = "jpeg",
        width = 14, height = 9)
 
 
+
+###Temperature
+###Plot the diurnal temperature range and the night temperature range together
+ggplot(data = BF_data, aes(x = Date, y = temp)) +
+  geom_line(size = 0.75, color = "orange", alpha = 0.8) +
+  geom_line(data = subset(BF_data, time >= 20 | time <= 6), 
+            aes(x = Date, y = temp), col = "skyblue", size = 0.6) +
+  geom_line(data = BF_temp, aes(x=Date, y= trial_mean_temp),
+            size = 0.75, color = "red") +
+  geom_line(data = BF_temp, aes(x=Date, y= mean_temp),
+            size = 0.75, color = "black") +
+  theme_bw() + theme(text = element_text(size = 15)) +
+  xlab("Date") +
+  ylab("Temperature (°C)")
+
+ggsave("Temperature data.jpeg", device = jpeg)
 
 
 
@@ -100,6 +118,9 @@ summary(bf_num_loc_Rand)
 
 write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
 
+max(mor_fed$Total.Loc)
+
+
 pred_bf <- predict(bf_num_loc_Rand, mor_fed, type = "response")
 
 ###Summary fig
@@ -123,14 +144,20 @@ bf_quant <- bf_mos%>%
                            "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
 bf_quant <- cbind(bf_quant, pred_bf)
 
+bf_pred <- bf_quant %>%
+  group_by(WashedStatus, Location, Total.Loc) %>%
+  mutate(sd = sqrt(var(pred_bf)),
+         lwr = pred_bf - 1.96*sd,
+         upr = pred_bf +1.96*sd)
+
+
 bf_quant$WashedStatus <-  relevel(as.factor(bf_quant$WashedStatus), ref = "UTN")
   ggplot(bf_quant, aes(color = Location, fill = Location))+
   geom_point(aes(x = Total.Loc, y = Bloodfed))+
   facet_grid(vars(Location), vars(WashedStatus))+
   labs(title = "Blood-feeding correponding to number of mosquitoes",
        x = "Number of mosquitoes", y = "Blood-feeding rate")+
-  geom_smooth(aes(x = Total.Loc, y = pred_bf),formula = y~x,method = glm, 
-              method.args= list(family="binomial"), col = "black")+
+  geom_line(aes(x = Total.Loc, y = pred_bf), col = "black")+
   theme_bw()
 
 ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
@@ -181,8 +208,8 @@ write.csv(tidy(mor_fed_num_ms_diu_temp_range), "Mortality n blood-fed n number n
 
 
 
-predict_mor <- predict(mor_fed_num_ms_diu_temp_range, mf_mos_temp, type = "response")
-pred_mor <- cbind(mf_mos_temp, predict_mor)
+predict_mor <- predict(mor_fed_num_ms_diu_temp_range, mor_fed_temp, type = "response")
+pred_mor <- cbind(mor_fed_temp, predict_mor)
 
 ####summary graph
 ggplot(m_mos, aes(y = Mortality, x=Location, color = Location,  fill = Location))+
@@ -217,7 +244,7 @@ mf_mos <- left_join(mf_mos, b, by=c("Village","Date","Treatment","Location", "In
 mf_mos$Treatment <- relevel(mf_mos$Treatment, ref = "UTN")
 
 ggplot(mf_mos, aes(color = Nets, fill = Nets))+
-  geom_point(aes(x = Bloodfed, y = Mortality))+
+  geom_point(aes(x = Fed, y = Mortality))+
   facet_grid(vars(Location), vars(Treatment))+
   labs(title = "Mortality correponding to blood-feeding",
        x = "Blood-feeding rate", y = "Mortality")+
