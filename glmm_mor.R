@@ -755,44 +755,60 @@ mor_num_1 <- glm(Dead ~ Location + Treatment + Location * Treatment + Total.Loc 
 summary(mor_num_1)
 ###AIC:4220.1
 
+mor_num_2 <- glm(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Location * Total.Loc, 
+                 data = mor_reg,  family = binomial("logit"))
+summary(mor_num_2)
+###AIC:4215.8
 
-mor_num_obs <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Treatment * Total.Loc + (1|marker), 
+mor_num_3 <- glm(Dead ~ Location + Treatment + Location * Treatment + Total.Loc
+                 + Treatment * Total.Loc + Location * Total.Loc, 
+                 data = mor_reg,  family = binomial("logit"))
+summary(mor_num_3)
+###AIC:4217.5
+
+rm(mor_num_4)
+
+
+mor_num_obs <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc 
+                     + Location * Total.Loc + (1|marker), 
                      data = mor_reg,  family = binomial("logit"))
 ss <- getME(mor_num_obs,c("theta","fixef"))
 mor_num_obs <- update(mor_num_obs,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                   optCtrl=list(maxfun=5e5)))
 
 summary(mor_num_obs)
-###AIC:3985.3
-###Var:0.9126
+###AIC:3981.8
+###Var:0.8825
 
 
 
-mor_num_Hut <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Treatment * Total.Loc + (1|Hut), 
+mor_num_Hut <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + 
+                       Location * Total.Loc + (1|Hut), 
                      data = mor_reg,  family = binomial("logit"))
-mor_num_Hut <- update(mor_num_Hut, control = glmerControl(optimizer = "bobyqa"))
 
 ss <- getME(mor_num_Hut,c("theta","fixef"))
 mor_num_Hut <- update(mor_num_Hut,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                 optCtrl=list(maxfun=5e5)))
 
 summary(mor_num_Hut)
-###AIC:4190.6
-###Var:0.06789
+###AIC:4182.3
+###Var:0.07296
 
 
-mor_num_Slp <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Treatment * Total.Loc + (1|Sleeper), 
+mor_num_Slp <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + 
+                       Location * Total.Loc + (1|Sleeper), 
                      data = mor_reg,  family = binomial("logit") )
 ss <- getME(mor_num_Slp,c("theta","fixef"))
 mor_num_Slp <- update(mor_num_Slp,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                 optCtrl=list(maxfun=5e5)))
 
 summary(mor_num_Slp)
-###AIC:4184.4
-###Var:0.08792
+###AIC:4181.8
+###Var:0.08471
 
 
-mor_num_mS <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Treatment * Total.Loc 
+mor_num_mS <- glmer(Dead ~ Location + Treatment + Location * Treatment 
+                    + Total.Loc + Location * Total.Loc 
                     + (1|marker) + (1|Sleeper), 
                       data = mor_reg,  family = binomial("logit"))
 ss <- getME(mor_num_mS,c("theta","fixef"))
@@ -800,13 +816,14 @@ mor_num_mS <- update(mor_num_mS,start=ss,control=glmerControl(optimizer="bobyqa"
                                                                 optCtrl=list(maxfun=5e5)))
 
 summary(mor_num_mS)
-###AIC:3982.8
-###Var:0.84137(observational) 0.07822(Hut)
+###AIC:3980.1
+###Var:0.81923(observational) 0.06692(Hut)
 
 
 
 
-mor_num_Rand <- glmer(Dead ~ Location + Treatment + Location * Treatment + Total.Loc + Treatment * Total.Loc 
+mor_num_Rand <- glmer(Dead ~ Location + Treatment + Location * Treatment + 
+                        Total.Loc + Location * Total.Loc 
                       + (1|marker) + (1|Hut) + (1|Sleeper), 
                       data = mor_reg,  family = binomial("logit"))
 
@@ -814,8 +831,8 @@ ss <- getME(mor_num_Rand,c("theta","fixef"))
 mor_num_Rand <- update(mor_num_Rand,start=ss,control=glmerControl(optimizer="bobyqa",
                                                               optCtrl=list(maxfun=5e5)))
 summary(mor_num_Rand)
-###AIC:3983.2
-###Var:0.80256(observational) 0.08294(Sleeper) 0.03722(Hut)
+###AIC:3979.8
+###Var:0.77280(observational) 0.07299(Sleeper) 0.04241(Hut)
 
 
 
@@ -1097,42 +1114,38 @@ write.csv(tidy(mor_fed_rand), "Mortality n blood-fed best model.csv")
 
 
 ######Aggregate both blood feeding and number of mosquitoes by location into the model
-mor_fed_num_ms <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                          (1 | marker)+ (1 | Sleeper), data = mor_fed, family = binomial("logit"))
-ss <- getME(mor_fed_num_ms,c("theta","fixef"))
-mor_fed_num_ms <- update(mor_fed_num_ms,start=ss,control=glmerControl(optimizer="bobyqa",
-                                                                  optCtrl=list(maxfun=5e5)))
-summary(mor_fed_num_ms)
-#AIC: 3819.9
-#Var: 1.578 obs 0.206 Sleeper 
 
-mor_fed_num_rand <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
+
+mor_fed_num_rand <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc
+                          + Total.Loc*Location +
                           (1 | marker)+ (1 | Sleeper) +(1|Hut), data = mor_fed, family = binomial("logit"))
 ss <- getME(mor_fed_num_rand,c("theta","fixef"))
 mor_fed_num_rand <- update(mor_fed_num_rand,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                       optCtrl=list(maxfun=5e5)))
 summary(mor_fed_num_rand)
-#AIC: 3820.1
-#Var: 1.51699 obs 0.21347 Sleeper 0.06331 Hut
-
-
-mor_fed_num_ms_1 <- glmer(Dead~Fed + Location+Fed*Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                          (1 | marker)+ (1 | Sleeper), data = mor_fed, family = binomial("logit"))
-ss <- getME(mor_fed_num_ms_1,c("theta","fixef"))
-mor_fed_num_ms_1 <- update(mor_fed_num_ms_1,start=ss,control=glmerControl(optimizer="bobyqa",
-                                                                      optCtrl=list(maxfun=5e5)))
-summary(mor_fed_num_ms_1)
-#AIC: 3821.6
-#Var: 1.5891 obs 0.2068 Sleeper 
-
-mor_fed_num_ms_1_rand <- glmer(Dead~Fed + Location+Fed*Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                            (1 | marker)+ (1 | Sleeper)+(1|Hut), data = mor_fed, family = binomial("logit"))
-ss <- getME(mor_fed_num_ms_1_rand,c("theta","fixef"))
-mor_fed_num_ms_1_rand <- update(mor_fed_num_ms_1_rand,start=ss,control=glmerControl(optimizer="bobyqa",
-                                                                          optCtrl=list(maxfun=5e5)))
-summary(mor_fed_num_ms_1_rand)
-#AIC: 3821.8
-#Var: 1.52804 obs 0.21430 Sleeper 0.06329 Hut
+#AIC: 3819.6
+#Var: 1.4451 obs 0.1884 Sleeper 0.0708 Hut
+# 
+# 
+# mor_fed_num_ms_1 <- glmer(Dead~Fed + Location+Fed*Location + Treatment + Location * Treatment + Total.Loc
+#                           + Total.Loc*Location +
+#                           (1 | marker)+ (1 | Sleeper), data = mor_fed, family = binomial("logit"))
+# ss <- getME(mor_fed_num_ms_1,c("theta","fixef"))
+# mor_fed_num_ms_1 <- update(mor_fed_num_ms_1,start=ss,control=glmerControl(optimizer="bobyqa",
+#                                                                       optCtrl=list(maxfun=5e5)))
+# summary(mor_fed_num_ms_1)
+# #AIC: 3821.6
+# #Var: 1.5891 obs 0.2068 Sleeper 
+# 
+# mor_fed_num_ms_1_rand <- glmer(Dead~Fed + Location+Fed*Location + Treatment + Location * Treatment 
+#                                + Total.Loc + Total.Loc*Location +
+#                             (1 | marker)+ (1 | Sleeper)+(1|Hut), data = mor_fed, family = binomial("logit"))
+# ss <- getME(mor_fed_num_ms_1_rand,c("theta","fixef"))
+# mor_fed_num_ms_1_rand <- update(mor_fed_num_ms_1_rand,start=ss,control=glmerControl(optimizer="bobyqa",
+#                                                                           optCtrl=list(maxfun=5e5)))
+# summary(mor_fed_num_ms_1_rand)
+# #AIC: 3821.8
+# #Var: 1.52804 obs 0.21430 Sleeper 0.06329 Hut
 
 write.csv(tidy(mor_fed_num_ms), "Mortality n blood-fed n number best model.csv")
 

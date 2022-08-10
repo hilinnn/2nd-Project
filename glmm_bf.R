@@ -450,41 +450,74 @@ bf_num_loc_2 <- glm(Fed~Total.Loc+ Location + WashedStatus, data = mor_fed, fami
 summary(bf_num_loc_2)
 ##AIC: 3807.4
 
+
 bf_num_loc_3 <- glm(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus, data = mor_fed, family =  binomial("logit"))
 summary(bf_num_loc_3)
 ##AIC: 3801.4
 
+bf_num_loc_4 <- glm(Fed~Total.Loc+ Location + WashedStatus  + Total.Loc * Location,
+                    data = mor_fed, family =  binomial("logit"))
+summary(bf_num_loc_4)
+##AIC: 3740.8
 
-bf_num_loc_obs <- glmer(Fed~Total.Loc + Location + WashedStatus + Total.Loc * WashedStatus
+bf_num_loc_5 <- glm(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + Total.Loc * Location,
+                    data = mor_fed, family =  binomial("logit"))
+summary(bf_num_loc_5)
+##AIC: 3714.6
+
+
+bf_num_loc_obs <- glmer(Fed~Total.Loc + Location + WashedStatus + Total.Loc * WashedStatus + Total.Loc * Location
                       + (1|marker), data = mor_fed, family =  binomial("logit"))
+ss <- getME(bf_num_loc_obs,c("theta","fixef"))
+bf_num_loc_obs <- update(bf_num_loc_obs,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                 optCtrl=list(maxfun=5e5)))
 
 summary(bf_num_loc_obs)
-##AIC: 3177.6
-##Var: 2.293
+##AIC: 3177.4
+##Var: 2.178
 
-bf_num_loc_Hut <- glmer(Fed~Total.Loc+ + Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut), 
+bf_num_loc_Hut <- glmer(Fed~Total.Loc+ + Location + WashedStatus + Total.Loc * WashedStatus 
+                        + Total.Loc * Location + (1|Hut), 
                       data = mor_fed, family =  binomial("logit"))
+
 summary(bf_num_loc_Hut)
-##AIC: 3758.7
-##Var: 0.09094
+##AIC: 3681.6
+##Var: 0.07529
+
+bf_num_loc_Hut_nw <- glmer(Fed~Total.Loc+ + Location + WashedStatus +  
+                        + Total.Loc * Location + (1|Hut), 
+                        data = mor_fed, family =  binomial("logit"))
+bf_num_loc_Hut_nw <- update(bf_num_loc_Hut_nw,control=glmerControl(optimizer="bobyqa"))
+summary(bf_num_loc_Hut_nw)
+##AIC: 3701.7
+##Var: 0.08533
 
 bf_num_loc_Slp <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus
-                      + (1|Sleeper), data = mor_fed, family =  binomial("logit"))
+                        + Total.Loc * Location+ (1|Sleeper), data = mor_fed, family =  binomial("logit"))
+
 summary(bf_num_loc_Slp)
-##AIC: 3611.9
-##Var: 0.3692
+##AIC: 3554.8
+##Var: 0.3314
 
 bf_num_loc_Rand <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                         + (1|marker)  + (1|Sleeper), data = mor_fed, family =  binomial("logit"))
+                         + Total.Loc * Location+ (1|marker)  + (1|Sleeper), 
+                         data = mor_fed, family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand,c("theta","fixef"))
 bf_num_loc_Rand <- update(bf_num_loc_Rand,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                     optCtrl=list(maxfun=3e5)))
 summary(bf_num_loc_Rand)
-##AIC: 3161.1
-##Var: 1.824310(observational) 0.007548(Hut) 0.433516(Sleeper)
+##AIC: 3160.9
+##Var: 1.727365(observational) 0.005976(Hut) 0.416347(Sleeper)
 
-write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
-
+bf_num_loc_Rand_nw <- glmer(Fed~Total.Loc+ Location + WashedStatus  + (1|Hut)
+                         + Total.Loc * Location+ (1|marker)  + (1|Sleeper), 
+                         data = mor_fed, family =  binomial("logit"))
+ss <- getME(bf_num_loc_Rand_nw,c("theta","fixef"))
+bf_num_loc_Rand_nw <- update(bf_num_loc_Rand_nw,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                        optCtrl=list(maxfun=3e5)))
+summary(bf_num_loc_Rand_nw)
+##AIC: 3156.9
+##Var: 1.734571(observational) 0.005949(Hut) 0.415454(Sleeper)
 
 ####Test model contains Treatment with or w/o location
 

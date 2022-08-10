@@ -107,21 +107,23 @@ standard_bf_ws <- glm(Fed~WashedStatus, data = mf_mos_temp,
 summary(standard_bf_ws)
 ##AIC: 5306.7
 
-bf_num_loc_Rand <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                         + (1|marker)  + (1|Sleeper), data = mor_fed, family =  binomial("logit"))
-ss <- getME(bf_num_loc_Rand,c("theta","fixef"))
-bf_num_loc_Rand <- update(bf_num_loc_Rand,start=ss,control=glmerControl(optimizer="bobyqa",
-                                                                        optCtrl=list(maxfun=3e5)))
-summary(bf_num_loc_Rand)
-##AIC: 3161.1
-##Var: 1.824310(observational) 0.007548(Hut) 0.433516(Sleeper)
-
-write.csv(tidy(bf_num_loc_Rand), "Blood feeding best model.csv")
-
-max(mor_fed$Total.Loc)
+bf_num_loc_Rand_nw <- glmer(Fed~Total.Loc+ Location + WashedStatus  + (1|Hut)
+                            + Total.Loc * Location+ (1|marker)  + (1|Sleeper), 
+                            data = mor_fed, family =  binomial("logit"))
+ss <- getME(bf_num_loc_Rand_nw,c("theta","fixef"))
+bf_num_loc_Rand_nw <- update(bf_num_loc_Rand_nw,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                              optCtrl=list(maxfun=3e5)))
+summary(bf_num_loc_Rand_nw)
+##AIC: 3156.9
+##Var: 1.734571(observational) 0.005949(Hut) 0.415454(Sleeper)
 
 
-pred_bf <- predict(bf_num_loc_Rand, mor_fed, type = "response")
+write.csv(tidy(bf_num_loc_Rand_nw), "Blood feeding best model.csv")
+
+
+
+
+
 
 ###Summary fig
 ggplot(bf_mos, aes(x=Location, y = Bloodfed, colour = Location, fill = Location))+
@@ -137,31 +139,89 @@ ggsave("Blood feeding by Location and Treatment.jpeg", device = jpeg,
        width = 8, height = 5.5)
 
 ###With number of mosquitoes
-bf_quant <- bf_mos%>%
-  dplyr::select(c("Village","Date","Treatment","Location", "Bloodfed", "Insecticide",
-                  "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
-  right_join(mor_fed, by=c("Village","Date","Treatment","Location", "Insecticide",
-                           "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
-bf_quant <- cbind(bf_quant, pred_bf)
+# bf_quant <- bf_mos%>%
+#   dplyr::select(c("Village","Date","Treatment","Location", "Bloodfed", "Insecticide",
+#                   "Total","WashedStatus","Sleeper","marker","Nets", "Hut")) %>%
+#   right_join(mor_fed, by=c("Village","Date","Treatment","Location", "Insecticide",
+#                            "Total","WashedStatus","Sleeper","marker","Nets", "Hut"))
+# bf_quant <- cbind(bf_quant, pred_bf)
+# 
+# bf_pred <- bf_quant %>%
+#   group_by(WashedStatus, Location, Total.Loc) %>%
+#   mutate(sd = sqrt(var(pred_bf)),
+#          lwr = pred_bf - 1.96*sd,
+#          upr = pred_bf +1.96*sd)
+# 
+# bf_quant$WashedStatus <-  relevel(as.factor(bf_quant$WashedStatus), ref = "UTN")
+# ggplot(bf_quant, aes(color = Location, fill = Location))+
+#   geom_point(aes(x = Total.Loc, y = Bloodfed))+
+#   facet_grid(vars(Location), vars(WashedStatus))+
+#   labs(title = "Blood-feeding correponding to number of mosquitoes",
+#        x = "Number of mosquitoes", y = "Blood-feeding rate")+
+#   geom_smooth(aes(x = Total.Loc, y = pred_bf), method = "glm", col = "black")+
+#   theme_bw()
+# 
+# ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
+#        width = 8, height = 5.5)
 
-bf_pred <- bf_quant %>%
-  group_by(WashedStatus, Location, Total.Loc) %>%
-  mutate(sd = sqrt(var(pred_bf)),
-         lwr = pred_bf - 1.96*sd,
-         upr = pred_bf +1.96*sd)
+#####Mortality against temperature predictions and plots
+
+max(mor_fed$Total.Loc)
+#52
+mor_fed %>%
+  count(marker) %>%
+  filter(n == max(n))
+#133
+mor_fed %>%
+  count(Sleeper) %>%
+  filter(n == max(n))
+#Te.S4
+
+mor_fed %>%
+  count(Hut) %>%
+  filter(n == max(n))
+#Te.C3
+
+mor_fed %>%
+  count(WashedStatus) %>%
+  filter(n == max(n))
+#unwashed
+WashedStatus_levels <- levels(mor_fed$WashedStatus)
+
+bf_df <-  data.frame(Location  = character(),
+                    WashedStatus = character(),
+                    Total.Loc = double(),
+                    Sleeper= character(),
+                    marker = character(),
+                    Hut = character())
+for (i in 1:3){
+  for (j in 1:3){
+    df_pred <- data.frame(Location = rep(Loc_levels[j],1000),
+                          Total.Loc = rep(seq(0,55,0.5), length.out = 1000),
+                          WashedStatus = rep(WashedStatus_levels[i],length.out = 1000),
+                          marker = as.character(rep(133, 1000)),
+                          Sleeper = rep("Te.S4", length.out =1000),
+                          Hut = rep("Te.C3", length.out =1000))
+    bf_df <- rbind(bf_df,df_pred)
+  }
+}
+
+bf_pred <- predictInterval(bf_num_loc_Rand_nw, bf_df, type = "probability",level = 0.95, 
+                                 n.sims = 1000,.parallel = FALSE)
+
+bf_pred_plot <- cbind(bf_df,bf_pred)
+
+bf_pred_plot$WashedStatus <- relevel(as.factor(bf_pred_plot$WashedStatus), ref = "UTN")
+
+ggplot(bf_pred_plot, aes(x=Total.Loc, y = fit))+
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5)+
+  geom_line(aes(color = Location)) +
+  labs(y = "Predicted blood-feeding rate", x = "Number of mosquitoes")+
+  facet_grid(vars(Location),vars(WashedStatus))
+
+ggsave("blood-feeding rate n counts.jpeg", device = "jpeg")
 
 
-bf_quant$WashedStatus <-  relevel(as.factor(bf_quant$WashedStatus), ref = "UTN")
-  ggplot(bf_quant, aes(color = Location, fill = Location))+
-  geom_point(aes(x = Total.Loc, y = Bloodfed))+
-  facet_grid(vars(Location), vars(WashedStatus))+
-  labs(title = "Blood-feeding correponding to number of mosquitoes",
-       x = "Number of mosquitoes", y = "Blood-feeding rate")+
-  geom_line(aes(x = Total.Loc, y = pred_bf), col = "black")+
-  theme_bw()
-
-ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
-       width = 8, height = 5.5)
 
 
 
@@ -170,26 +230,27 @@ ggsave("Blood feeding status by number of mosquitoes.jpeg", device = jpeg,
 
 ###Model
 mf_mos_temp$Treatment <- relevel(mf_mos_temp$Treatment, ref = "UTN")
-standard_mor <- glm(Dead~Treatment, data = mf_mos_temp,
+standard_mor <- glm(Dead~Treatment, data = mor_fed_temp,
                       family = binomial("logit"))
 summary(standard_mor)
 ##AIC: 4410.3
 
-standard_mor_mix <- glmer(Dead~Treatment + (1|marker) + (1|Hut), data = mf_mos_temp,
+standard_mor_mix <- glmer(Dead~Treatment + (1|marker) + (1|Hut), data = mor_fed_temp,
                     family = binomial("logit"))
 summary(standard_mor_mix)
 ##AIC: 4093.3
 
-mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                                         diurnal_temp_range + (1 | marker)+ (1 | Sleeper), data = mf_mos_temp, family = binomial("logit"))
+mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Location +
+                                         diurnal_temp_range + (1 | marker)+ (1 | Sleeper)+ (1|Hut), data = mor_fed_temp, 
+                                       family = binomial("logit"))
 ss <- getME(mor_fed_num_ms_diu_temp_range,c("theta","fixef"))
 mor_fed_num_ms_diu_temp_range <- update(mor_fed_num_ms_diu_temp_range,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                                     optCtrl=list(maxfun=5e5)))
 summary(mor_fed_num_ms_diu_temp_range)
-###AIC: 3817.7
-###Var: 1.5223(observational) 0.2152(Sleeper)
+###AIC: 3817.2
+###Var: 1.39494(observational) 0.19681(Sleeper) 0.07232(Hut)
 
-write.csv(tidy(mor_fed_num_ms_diu_temp_range), "Mortality n blood-fed n number n temp best model.csv")
+write.csv(tidy(mor_fed_num_ms_diu_temp_range), "Mortality best model.csv")
 
 
 
@@ -208,8 +269,6 @@ write.csv(tidy(mor_fed_num_ms_diu_temp_range), "Mortality n blood-fed n number n
 
 
 
-predict_mor <- predict(mor_fed_num_ms_diu_temp_range, mor_fed_temp, type = "response")
-pred_mor <- cbind(mor_fed_temp, predict_mor)
 
 ####summary graph
 ggplot(m_mos, aes(y = Mortality, x=Location, color = Location,  fill = Location))+
@@ -222,8 +281,6 @@ ggplot(m_mos, aes(y = Mortality, x=Location, color = Location,  fill = Location)
 
 ggsave("Mortality by location and treatment.jpeg", 
        device = jpeg, width = 8, height = 5.5)
-
-
 
 ###Blood feeding rate
 mf_mos <- m_mos %>%
@@ -243,23 +300,152 @@ mf_mos <- left_join(mf_mos, b, by=c("Village","Date","Treatment","Location", "In
 
 mf_mos$Treatment <- relevel(mf_mos$Treatment, ref = "UTN")
 
-ggplot(mf_mos, aes(color = Nets, fill = Nets))+
-  geom_point(aes(x = Fed, y = Mortality))+
+# a <- pred_mor %>%
+#   dplyr::select(c("Treatment", "Location", "mean", "Fed","Nets")) %>%
+#   distinct() %>%
+#   filter(Fed==0)
+# 
+# b <- pred_mor %>%
+#   dplyr::select(c("Treatment", "Location", "mean", "Fed","Nets")) %>%
+#   distinct() %>%
+#   filter(Fed==1)
+  
+pred_mor_mean_line <- left_join(a,b, by = c("Treatment", "Location","Nets"))
+
+
+mean(mor_fed_temp$diurnal_temp_range)
+#7.669743
+median(mor_fed_temp$diurnal_temp_range)
+#7.911625
+
+mor_bf <-  data.frame(Treatment = character(),
+                    Location  = character(),
+                    Fed = double(),
+                    Total.Loc = double(),
+                    Sleeper= character(),
+                    marker = character(),
+                    Hut = character(),
+                    diurnal_temp_range = double())
+for (i in 1:6){
+  for (j in 1:3){
+    df <- data.frame(Treatment = rep(Treatment_levels[i],1000),
+                          Location = rep(Loc_levels[j],1000),
+                          Total.Loc = rep(15.5, 1000),
+                          Fed = rep(0:1, each=500),
+                          diurnal_temp_range =  rep(7.8, length.out = 1000),
+                          marker = as.character(rep(133, 1000)),
+                          Sleeper = rep("Te.S4", length.out =1000),
+                          Hut = rep("Te.C3", length.out =1000))
+    mor_bf <- rbind(mor_bf,df)
+  }
+}
+
+mor_bf_pred <- predictInterval(mor_fed_num_ms_diu_temp_range, mor_bf, type = "probability", 
+                                 level= 0.95, .parallel = FALSE)
+
+mor_bf_pred_plot <- cbind(mor_bf,mor_bf_pred)
+
+mor_bf_pred_plot$Treatment <- relevel(as.factor(mor_bf_pred_plot$Treatment), ref = "UTN")
+
+mor_bf_pred_mean <- mor_bf_pred_plot %>%
+  group_by(Treatment, Location, Fed)%>%
+  summarise(Mean = mean(fit),
+            Lwr = mean(lwr),
+            Upr = mean(upr))
+
+
+
+ggplot(mf_mos, aes(color = Location))+
+  geom_point(aes(x = Bloodfed, y = Mortality))+
   facet_grid(vars(Location), vars(Treatment))+
   labs(title = "Mortality correponding to blood-feeding",
-       x = "Blood-feeding rate", y = "Mortality")+
-  scale_x_continuous(labels = c(0, 0.25,0.5,0.75,1.0))+
-  geom_smooth(data = pred_mor, aes(x=Fed, y = predict_mor), col = "black", method = "glm", 
-              method.args = list(family = "binomial"))+
+       x = "Blood-feeding rate", y = "Mortality/Predicted mortality")+
+  geom_errorbar(data = mor_bf_pred_mean, aes(x=Fed,ymin = Lwr, ymax = Upr), 
+                col = "black", width= 0.3)+
+  geom_line(data = mor_bf_pred_mean, aes(x=Fed, y = Mean), col = "black")+
   theme_bw()+
   theme(plot.title = element_text(hjust = 0.5),
         axis.text = element_text(size = 11),
         axis.title = element_text(size = 12),
         strip.text = element_text(size = 12),
         legend.text = element_text(size = 11),
-        legend.title = element_text(size = 12))
+        legend.title = element_text(size = 12))+
+  scale_x_continuous(breaks = c(0,0.5,1))
+
 
 ggsave("Mortality corresponding blood feeding.jpeg", device = jpeg)
+
+
+
+#####Mortality against temperature predictions and plots
+mean(mor_fed_temp$Fed)
+#0.5121384
+mean(mor_fed_temp$Total.Loc)
+#15.50155
+mor_fed_temp %>%
+  count(marker) %>%
+  filter(n == max(n))
+#133
+mor_fed_temp %>%
+  count(Sleeper) %>%
+  filter(n == max(n))
+#Te.S4
+mor_fed_temp %>%
+  count(Hut) %>%
+  filter(n == max(n))
+#Te.C3
+
+max(mor_fed_temp$diurnal_temp_range)
+
+mor_temp_df <-  data.frame(Treatment = character(),
+                    Location  = character(),
+                    Fed = double(),
+                    Total.Loc = double(),
+                    Sleeper= character(),
+                    marker = character(),
+                    Hut = character(),
+                    diurnal_temp_range = double())
+for (i in 1:6){
+  for (j in 1:3){
+    df_pred <- data.frame(Treatment = rep(Treatment_levels[i],1000),
+                       Location = rep(Loc_levels[j],1000),
+                       Total.Loc = rep(15.5, 1000),
+                       Fed = rep(0.5121384, 1000),
+                       diurnal_temp_range =  rep(seq(0,10,0.01), length.out = 1000),
+                       marker = as.character(rep(133, 1000)),
+                       Sleeper = rep("Te.S4", length.out =1000),
+                       Hut = rep("Te.C3", length.out =1000))
+    mor_temp_df <- rbind(mor_temp_df,df_pred)
+  }
+}
+
+mor_temp_pred <- predictInterval(mor_fed_num_ms_diu_temp_range, mor_temp_df, type = "probability", 
+                                 level = 0.95,n.sims = 999,.parallel = FALSE)
+
+mor_temp_pred_plot <- cbind(mor_temp_df,mor_temp_pred)
+
+mor_temp_pred_plot$Treatment <- relevel(as.factor(mor_temp_pred_plot$Treatment), ref = "UTN")
+
+ggplot(mor_temp_pred_plot, aes(x=diurnal_temp_range, y = fit))+
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5)+
+  geom_line(aes(color = Location)) +
+  labs(y = "Predicted mortality", x = "Diurnal temperature range (°C)")+
+  facet_grid(vars(Location),vars(Treatment))+
+  scale_x_continuous(breaks = c(0,2,4,6,8,10))
+  
+ggsave("Mortality vs temp range.jpeg", device = "jpeg")
+
+# pred_temp <- cbind(mor_fed_temp, mor_pred_temp)
+# pred_temp <- cbind(pred_temp, mor_reg[,"Mortality"])
+# colnames(pred_temp)[26] <- "Mortality"
+# 
+# 
+# ggplot(pred_temp, aes(x = diurnal_temp_range, col = Location))+
+#   geom_point(aes(y=Mortality))+
+#   geom_line(aes(y = fit))+
+#   geom_ribbon(aes(ymin = lwr, ymax = upr, fill = Location), alpha = 0.7)+
+#   facet_grid(vars(Location), vars(Treatment))+
+#   labs(y = "Mortality/predicted mortality", x = "Temperature range during the trial time")
 
 # summary(glm(Dead~Fed, data = mf_mos, family = binomial("logit")))
 # Deviance Residuals: 

@@ -101,11 +101,13 @@ ggplot(n_mos, aes(y = Count, x=diurnal_temp_range, col = Location))+
 
 
 
-model_5_1_diu_temp <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker) + diurnal_temp_range, data = n_mos)
+model_5_1_diu_temp <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker)
+                               + diurnal_temp_range, data = n_mos)
 summary(model_5_1_diu_temp)
 ###term insignificant
 ##AIC:3635.3
 ###Var:0.1026
+
 
 model_5_1_mean_temp <- glmer.nb(formula = Count~Location + WashedStatus+ (1|marker) + mean_temp, data = n_mos)
 model_5_1_mean_temp <- update(model_5_1_mean_temp, control = glmerControl(optimizer = "bobyqa"))
@@ -121,6 +123,8 @@ summary(model_5_1_trial_range)
 ###term significant
 ##AIC:3633.4
 ##Var:0.09561
+
+
 
 write.csv(tidy(model_5_1_trial_range), "Best model for count.csv")
 
@@ -168,46 +172,51 @@ ggplot(mf_mos_temp, aes(y=Mortality, x = diurnal_temp_range, col = Location))+
 ##############################################################
 View(mf_mos_temp)
 
-bf_num_loc_Rand_mean_temp <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                                    + mean_temp + mean_temp + (1|marker)  + (1|Sleeper), data = mor_fed_temp, 
+bf_num_loc_Rand_mean_temp <- glmer(Fed~Total.Loc+ Location + WashedStatus  + (1|Hut)
+                                   + Total.Loc * Location+ mean_temp + (1|marker)  + (1|Sleeper), 
+                                   data = mor_fed_temp, 
                                    family =  binomial("logit"))
-bf_num_loc_Rand_mean_temp <- update(bf_num_loc_Rand_mean_temp,control=glmerControl(optimizer="bobyqa",
-                                                                                     optCtrl=list(maxfun=3e5)))
+ss <- getME(bf_num_loc_Rand_mean_temp,c("theta","fixef"))
+bf_num_loc_Rand_mean_temp <- update(bf_num_loc_Rand_mean_temp,start=ss,control=glmerControl(optimizer="bobyqa",
+                                                                 optCtrl=list(maxfun=5e5)))
 summary(bf_num_loc_Rand_mean_temp)
-##AIC: 3163.0
-##Var: 1.822545(observational) 0.007873(Hut) 0.435550(Sleeper)
+##AIC: 3158.8
+##Var: 1.732898(observational) 0.006269(Hut) 0.417458(Sleeper)
 
 
-bf_num_loc_Rand_temp_range <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                                    + diurnal_temp_range + (1|marker)  + (1|Sleeper), data = mor_fed_temp, 
+bf_num_loc_Rand_temp_range <- glmer(Fed~Total.Loc+ Location + WashedStatus  + (1|Hut)
+                                    + Total.Loc * Location+ diurnal_temp_range + (1|marker)  + (1|Sleeper), 
+                                    data = mor_fed_temp, 
                                     family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand_temp_range,c("theta","fixef"))
 bf_num_loc_Rand_temp_range <- update(bf_num_loc_Rand_temp_range,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                               optCtrl=list(maxfun=5e5)))
 summary(bf_num_loc_Rand_temp_range)
-##AIC: 3163.1
-##Var: 1.823743(observational) 0.007917(Hut) 0.435769(Sleeper)
+##AIC: 3158.9
+##Var: 1.734685(observational) 0.006293(Hut) 0.417540(Sleeper)
 
 
-bf_num_loc_Rand_trial_temp <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                         + trial_mean_temp+ (1|marker)  + (1|Sleeper), data = mor_fed_temp, family =  binomial("logit"))
+bf_num_loc_Rand_trial_temp <- glmer(Fed~Total.Loc+ Location + WashedStatus + (1|Hut)
+                                    + Total.Loc * Location+ trial_mean_temp+ (1|marker)  + (1|Sleeper), 
+                                    data = mor_fed_temp, family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand_trial_temp,c("theta","fixef"))
 bf_num_loc_Rand_trial_temp <- update(bf_num_loc_Rand_trial_temp,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                 optCtrl=list(maxfun=5e5)))
 summary(bf_num_loc_Rand_trial_temp)
-##AIC: 3163.1
-##Var: 1.824555(observational) 0.007456(Hut) 0.433202(Sleeper)
+##AIC: 3158.9
+##Var: 1.734624(observational) 0.005927(Hut) 0.415383(Sleeper)
 
 
-bf_num_loc_Rand_trial_temp_range <- glmer(Fed~Total.Loc+ Location + WashedStatus + Total.Loc * WashedStatus + (1|Hut)
-                                    + trial_temp_range + (1|marker)  + (1|Sleeper), data = mor_fed_temp, 
+bf_num_loc_Rand_trial_temp_range <- glmer(Fed~Total.Loc+ Location + WashedStatus  + (1|Hut)
+                                          + Total.Loc * Location+ trial_temp_range + (1|marker)  + (1|Sleeper), 
+                                          data = mor_fed_temp, 
                                     family =  binomial("logit"))
 ss <- getME(bf_num_loc_Rand_trial_temp_range,c("theta","fixef"))
 bf_num_loc_Rand_trial_temp_range <- update(bf_num_loc_Rand_trial_temp_range,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                               optCtrl=list(maxfun=5e5)))
 summary(bf_num_loc_Rand_trial_temp_range)
-##AIC: 3163.1
-##Var: 1.823235(observational) 0.007512(Hut) 0.432773(Sleeper)
+##AIC: 3158.9
+##Var: 1.732868(observational) 0.005903(Hut) 0.414677(Sleeper)
 
 
 
@@ -220,55 +229,57 @@ summary(bf_num_loc_Rand_trial_temp_range)
 ##############################################################
 
 
-ggplot(mf_mos_temp, aes(y=Mortality, x = trial_temp_range, col = Location))+
+ggplot(mf_mos_temp, aes(y=Mortality, x = diurnal_temp_range, col = Location))+
   geom_point()+
   facet_grid(vars(Location), vars(Treatment))+
   labs(y = "Mortality rate", x = "Temperature range during the trial time")
 
 
-mor_fed_num_ms_mean_temp <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                                    mean_temp + (1 | marker)+ (1 | Sleeper), data = mor_fed_temp, family = binomial("logit"))
+mor_fed_num_ms_mean_temp <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Location +
+                                    mean_temp + (1 | marker)+ (1 | Sleeper) + (1|Hut), 
+                                  data = mor_fed_temp, family = binomial("logit"))
 ss <- getME(mor_fed_num_ms_mean_temp,c("theta","fixef"))
 mor_fed_num_ms_mean_temp <- update(mor_fed_num_ms_mean_temp,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                           optCtrl=list(maxfun=5e5)))
 summary(mor_fed_num_ms_mean_temp)
-###AIC: 3821.2
-###Var: 1.5647(observational) 0.2082(Sleeper)
+###AIC: 3820.9
+###Var: 1.43495(observational) 0.19014(Sleeper) 0.07023(Hut)
 
 
 
-mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                                         diurnal_temp_range + (1 | marker)+ (1 | Sleeper), data = mor_fed_temp, 
+mor_fed_num_ms_diu_temp_range <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Location +
+                                         diurnal_temp_range + (1 | marker)+ (1 | Sleeper)+ (1|Hut), data = mor_fed_temp, 
                                        family = binomial("logit"))
 ss <- getME(mor_fed_num_ms_diu_temp_range,c("theta","fixef"))
 mor_fed_num_ms_diu_temp_range <- update(mor_fed_num_ms_diu_temp_range,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                                     optCtrl=list(maxfun=5e5)))
 summary(mor_fed_num_ms_diu_temp_range)
-###AIC: 3817.7
-###Var: 1.5223(observational) 0.2152(Sleeper)
+###AIC: 3817.2
+###Var: 1.39494(observational) 0.19681(Sleeper) 0.07232(Hut)
 
 
 
-mor_fed_num_ms_mean_temp_trial <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                                          trial_mean_temp + (1 | marker)+ (1 | Sleeper), data = mor_fed_temp, 
+mor_fed_num_ms_mean_temp_trial <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Location +
+                                          trial_mean_temp + (1 | marker)+ (1 | Sleeper)+ (1|Hut), data = mor_fed_temp, 
                                         family = binomial("logit"))
 ss <- getME(mor_fed_num_ms_mean_temp_trial,c("theta","fixef"))
 mor_fed_num_ms_mean_temp_trial <- update(mor_fed_num_ms_mean_temp_trial,start=ss, control=glmerControl(optimizer="bobyqa",
                                                                                                        optCtrl = list(maxfun=5e5)))
 summary(mor_fed_num_ms_mean_temp_trial)
-###AIC: 3821.9
-###Var: 1.577(observational) 0.206(Sleeper)
+###AIC: 3821.6
+###Var: 1.44394(observational) 0.18832(Sleeper) 0.07076(Hut)
 
 
-mor_fed_num_ms_temp <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Treatment +
-                               trial_temp_range + (1 | marker)+ (1 | Sleeper), data = mor_fed_temp, family = binomial("logit"))
+mor_fed_num_ms_temp <- glmer(Dead~Fed + Location + Treatment + Location * Treatment + Total.Loc + Total.Loc*Location +
+                               trial_temp_range + (1 | marker)+ (1 | Sleeper)+ (1|Hut),
+                             data = mor_fed_temp, family = binomial("logit"))
 
 ss <- getME(mor_fed_num_ms_temp,c("theta","fixef"))
 mor_fed_num_ms_temp <- update(mor_fed_num_ms_temp,start=ss,control=glmerControl(optimizer="bobyqa",
                                                                                 optCtrl=list(maxfun=5e5)))
 summary(mor_fed_num_ms_temp)
-###AIC: 3818.7
-###Var: 1.5419(observational) 0.2095(Sleeper)
+###AIC: 3818.5
+###Var: 1.41515(observational) 0.19043(Sleeper) 0.07055(Hut)
 
 
 

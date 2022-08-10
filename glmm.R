@@ -288,12 +288,12 @@ model_1_1$coefficients
 n_mos_wt_Loc <- n_mos %>%
   distinct(Date,Treatment,Total, .keep_all = TRUE)
 
-model_1_2 <- glm.nb(formula = Total~WashedStatus, data = n_mos_wt_Loc)
+model_1_2 <- glm.nb(formula = Count~WashedStatus, data = n_mos)
 summary(model_1_2)
 #AIC: 3694.7
 #AIC: 1626.8
 
-model_1_3 <- glm.nb(formula = Total~Treatment, data = n_mos_wt_Loc)
+model_1_3 <- glm.nb(formula = Count~Treatment, data = n_mos)
 summary(model_1_3)
 #AIC: 3699.6
 #AIC: 1631.6
